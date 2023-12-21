@@ -1,6 +1,7 @@
 version: "3.9"
 services:
   da:
+    container_name: 'celestia-da'
     platform: linux/x86_64
     image: "ghcr.io/rollkit/local-celestia-devnet:v0.12.1"
     ports:
