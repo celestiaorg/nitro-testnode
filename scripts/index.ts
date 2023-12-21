@@ -21,7 +21,7 @@ async function main() {
   await Yargs(hideBin(process.argv))
     .options({
       redisUrl: { string: true, default: "redis://redis:6379" },
-      l1url: { string: true, default: "wss://arb-sepolia.g.alchemy.com/v2/<YOUR_API_KEY>" },
+      l1url: { string: true, default: "wss://arb-sepolia.g.alchemy.com/v2/WnmuJof4-vd94akg0P73K-PwR3Eb6c82" },
       l2url: { string: true, default: "ws://sequencer:8548" },
       l3url: { string: true, default: "ws://l3node:3348" },
       validationNodeUrl: { string: true, default: "ws://validation_node:8549" },

@@ -329,7 +329,7 @@ if $force_init; then
     echo == Deploying L2
     sequenceraddress=`docker-compose run scripts print-address --account sequencer | tail -n 1 | tr -d '\r\n'`
 
-    docker-compose run --entrypoint /usr/local/bin/deploy poster --l1conn wss://arb-sepolia.g.alchemy.com/v2/<YOUR_API_KEY> --l1privatekey <YOUR_PRIV_KEY> --sequencerAddress 0xC21f5821fd8bb5525C1E0c04ee1D6Fc47447E78B --ownerAddress 0xC21f5821fd8bb5525C1E0c04ee1D6Fc47447E78B --l1DeployAccount 0xC21f5821fd8bb5525C1E0c04ee1D6Fc47447E78B --authorizevalidators 10 --wasmrootpath /home/user/target/machines --l1chainid=$l1chainid --l2chainconfig /config/l2_chain_config.json --l2chainname arb-dev-test --l2chaininfo /config/deployed_chain_info.json
+    docker-compose run --entrypoint /usr/local/bin/deploy poster --l1conn wss://arb-sepolia.g.alchemy.com/v2/WnmuJof4-vd94akg0P73K-PwR3Eb6c82 --l1privatekey 36185c9e42ff8ead00c788b98861f8abfa98c02a6be9037ee322d347fc2da8d6 --sequencerAddress 0xC21f5821fd8bb5525C1E0c04ee1D6Fc47447E78B --ownerAddress 0xC21f5821fd8bb5525C1E0c04ee1D6Fc47447E78B --l1DeployAccount 0xC21f5821fd8bb5525C1E0c04ee1D6Fc47447E78B --l1deployment /config/deployment.json --authorizevalidators 10 --wasmrootpath /home/user/target/machines --l1chainid=$l1chainid --l2chainconfig /config/l2_chain_config.json --l2chainname arb-dev-test --l2chaininfo /config/deployed_chain_info.json
     docker-compose run --entrypoint sh poster -c "jq [.[]] /config/deployed_chain_info.json > /config/l2_chain_info.json"
     echo == Writing configs
     docker-compose run scripts write-config --authToken $CELESTIA_NODE_AUTH_TOKEN
