@@ -2,12 +2,23 @@ version: "3.9"
 services:
   da:
     container_name: 'celestia-da'
+    user: root
     platform: linux/x86_64
-    image: "ghcr.io/rollkit/local-celestia-devnet:v0.12.1"
+    image: "ghcr.io/celestiaorg/celestia-node:v0.12.1" 
+    command: > 
+            celestia light start 
+            --core.ip rpc-mocha.pops.one 
+            --p2p.network mocha 
+            --log.level debug --gateway 
+    environment: 
+      - NODE_TYPE=light 
+      - P2P_NETWORK=mocha
     ports:
       - "26657:26657"
       - "26658:26658"
       - "26659:26659"
+    volumes: 
+      - $HOME/.celestia-light-mocha-4/:/home/celestia/.celestia-light-mocha-4/ 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:26659/header/1"]
       interval: 10s

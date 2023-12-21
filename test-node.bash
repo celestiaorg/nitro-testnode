@@ -4,7 +4,7 @@ set -e
 
 NITRO_NODE_VERSION=offchainlabs/nitro-node:v2.1.1-e9d8842-dev
 BLOCKSCOUT_VERSION=offchainlabs/blockscout:v1.0.0-c8db5b1
-NODE_PATH="/home/celestia/bridge/"
+NODE_PATH="/home/celestia/.celestia-light-mocha-4/"
 
 mydir=`dirname $0`
 cd "$mydir"
@@ -284,7 +284,7 @@ if $force_init; then
     echo == Bringing up Celestia Devnet
     docker-compose up -d da
     wait_up http://localhost:26659/header/1
-    export CELESTIA_NODE_AUTH_TOKEN="$(docker exec celestia-da celestia bridge auth admin --node.store  ${NODE_PATH})"
+    export CELESTIA_NODE_AUTH_TOKEN="$(docker exec celestia-da celestia light auth admin --node.store  ${NODE_PATH})"
 
     echo == Generating l1 keys
     docker-compose run scripts write-accounts
