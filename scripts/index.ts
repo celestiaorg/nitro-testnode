@@ -21,12 +21,12 @@ async function main() {
   await Yargs(hideBin(process.argv))
     .options({
       redisUrl: { string: true, default: "redis://redis:6379" },
-      l1url: { string: true, default: "ws://geth:8546" },
+      l1url: { string: true, default: "wss://arb-sepolia.g.alchemy.com/v2/<YOUR_API_KEY>" },
       l2url: { string: true, default: "ws://sequencer:8548" },
       l3url: { string: true, default: "ws://l3node:3348" },
       validationNodeUrl: { string: true, default: "ws://validation_node:8549" },
       authToken: { string: true },
-      l2owner: { string: true, default: "0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E" },
+      l2owner: { string: true, default: "0xC21f5821fd8bb5525C1E0c04ee1D6Fc47447E78B" },
     })
     .options(stressOptions)
     .command(bridgeFundsCommand)

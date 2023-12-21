@@ -36,7 +36,7 @@ function writeGethGenesisConfig(argv: any) {
     {
         "config": {
             "ChainName": "l1_chain",
-                "chainId": 32382,
+                "chainId": 421614,
                 "consensus": "clique",
                 "homesteadBlock": 0,
                 "daoForkSupport": true,

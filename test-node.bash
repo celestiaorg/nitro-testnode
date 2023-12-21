@@ -43,7 +43,7 @@ dev_build_nitro=false
 dev_build_blockscout=false
 batchposters=1
 devprivkey=b6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659
-l1chainid=1337
+l1chainid=421614
 while [[ $# -gt 0 ]]; do
     case $1 in
         --init)
@@ -281,7 +281,7 @@ if $force_init; then
         docker volume rm $leftoverVolumes
     fi
 
-    echo == Bringing up Celestia Devnet
+    echo == Bringing up Celestia Light Node
     docker-compose up -d da
     wait_up http://localhost:26659/header/1
     export CELESTIA_NODE_AUTH_TOKEN="$(docker exec celestia-da celestia light auth admin --node.store  ${NODE_PATH})"
@@ -315,13 +315,13 @@ if $force_init; then
       docker-compose up -d geth
     fi
 
-    echo == Funding validator and sequencer
-    docker-compose run scripts send-l1 --ethamount 1000 --to validator --wait
-    docker-compose run scripts send-l1 --ethamount 1000 --to sequencer --wait
+    # echo == Funding validator and sequencer
+    # docker-compose run scripts send-l1 --ethamount 1000 --to validator --wait
+    # docker-compose run scripts send-l1 --ethamount 1000 --to sequencer --wait
 
-    echo == create l1 traffic
-    docker-compose run scripts send-l1 --ethamount 1000 --to user_l1user --wait
-    docker-compose run scripts send-l1 --ethamount 0.0001 --from user_l1user --to user_l1user_b --wait --delay 500 --times 500 > /dev/null &
+    # echo == create l1 traffic
+    # docker-compose run scripts send-l1 --ethamount 1000 --to user_l1user --wait
+    # docker-compose run scripts send-l1 --ethamount 0.0001 --from user_l1user --to user_l1user_b --wait --delay 500 --times 500 > /dev/null &
 
     echo == Writing l2 chain config
     docker-compose run scripts write-l2-chain-config
@@ -329,7 +329,7 @@ if $force_init; then
     echo == Deploying L2
     sequenceraddress=`docker-compose run scripts print-address --account sequencer | tail -n 1 | tr -d '\r\n'`
 
-    docker-compose run --entrypoint /usr/local/bin/deploy poster --l1conn ws://geth:8546 --l1keystore /home/user/l1keystore --sequencerAddress $sequenceraddress --ownerAddress $sequenceraddress --l1DeployAccount $sequenceraddress --l1deployment /config/deployment.json --authorizevalidators 10 --wasmrootpath /home/user/target/machines --l1chainid=$l1chainid --l2chainconfig /config/l2_chain_config.json --l2chainname arb-dev-test --l2chaininfo /config/deployed_chain_info.json
+    docker-compose run --entrypoint /usr/local/bin/deploy poster --l1conn wss://arb-sepolia.g.alchemy.com/v2/<YOUR_API_KEY> --l1privatekey <YOUR_PRIV_KEY> --sequencerAddress 0xC21f5821fd8bb5525C1E0c04ee1D6Fc47447E78B --ownerAddress 0xC21f5821fd8bb5525C1E0c04ee1D6Fc47447E78B --l1DeployAccount 0xC21f5821fd8bb5525C1E0c04ee1D6Fc47447E78B --authorizevalidators 10 --wasmrootpath /home/user/target/machines --l1chainid=$l1chainid --l2chainconfig /config/l2_chain_config.json --l2chainname arb-dev-test --l2chaininfo /config/deployed_chain_info.json
     docker-compose run --entrypoint sh poster -c "jq [.[]] /config/deployed_chain_info.json > /config/l2_chain_info.json"
     echo == Writing configs
     docker-compose run scripts write-config --authToken $CELESTIA_NODE_AUTH_TOKEN
@@ -339,15 +339,15 @@ if $force_init; then
 
     echo == Funding l2 funnel and dev key
     docker-compose up -d $INITIAL_SEQ_NODES
-    docker-compose run scripts bridge-funds --ethamount 100000 --wait
-    docker-compose run scripts bridge-funds --ethamount 1000 --wait --from "key_0x$devprivkey"
+    # docker-compose run scripts bridge-funds --ethamount 100000 --wait
+    # docker-compose run scripts bridge-funds --ethamount 1000 --wait --from "key_0x$devprivkey"
 
-    if $tokenbridge; then
-        echo == Deploying token bridge
-        docker-compose run -e ARB_KEY=$devprivkey -e ETH_KEY=$devprivkey tokenbridge gen:network
-        docker-compose run --entrypoint sh tokenbridge -c "cat localNetwork.json"
-        echo
-    fi
+    # if $tokenbridge; then
+    #     echo == Deploying token bridge
+    #     docker-compose run -e ARB_KEY=$devprivkey -e ETH_KEY=$devprivkey tokenbridge gen:network
+    #     docker-compose run --entrypoint sh tokenbridge -c "cat localNetwork.json"
+    #     echo
+    # fi
 
     if $l3node; then
         echo == Funding l3 users
