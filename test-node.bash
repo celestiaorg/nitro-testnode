@@ -284,7 +284,7 @@ if $force_init; then
     echo == Bringing up Celestia Devnet
     docker-compose up -d da
     wait_up http://localhost:26659/header/1
-    export CELESTIA_NODE_AUTH_TOKEN="$(docker exec celestia-da celestia bridge auth admin --node.store  ${NODE_PATH})"
+    export CELESTIA_NODE_AUTH_TOKEN="$(docker exec da-celestia celestia bridge auth admin --node.store  ${NODE_PATH})"
 
     echo == Generating l1 keys
     docker-compose run scripts write-accounts
