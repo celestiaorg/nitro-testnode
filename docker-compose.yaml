@@ -1,28 +1,9 @@
 version: "3.9"
 services:
-  da:
-    container_name: da-celestia
-    platform: linux/x86_64
-    image: "celestia-local-devnet:latest"
-    ports:
-      - "26657:26657"
-      - "26658:26658"
-      - "26659:26659"
-      - "9090:9090"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:26659/header/1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-
   orchestrator:
     container_name: orchestrator
     build:
       dockerfile: Dockerfile
-    depends_on:
-      - da
     ports:
       - "30000:30000"
     environment:
@@ -52,7 +33,6 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - geth
-      - da
     ports:
       - "30004:30000"
     environment:
@@ -143,6 +123,7 @@ services:
       - --authrpc.vhosts=*
       - --authrpc.port=8551
       - --authrpc.addr=0.0.0.0
+      - --rpc.allow-unprotected-txs
       - --http.vhosts=*
       - --http.api=engine,personal,eth,net,web3
       - --http.corsdomain=*

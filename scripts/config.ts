@@ -36,7 +36,7 @@ function writeGethGenesisConfig(argv: any) {
     {
         "config": {
             "ChainName": "l1_chain",
-                "chainId": 32382,
+                "chainId": 1337,
                 "consensus": "clique",
                 "homesteadBlock": 0,
                 "daoForkSupport": true,
@@ -139,12 +139,6 @@ function writeGethGenesisConfig(argv: any) {
         },
         "0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199": {
             "balance": "10000000000000000000000"
-        },
-        "0x95359c3348e189ef7781546e6E13c80230fC9fB5": {
-            "balance": "1000000000000000000000000000000000"
-        }
-        "0x966e6f22781EF6a6A82BBB4DB3df8E225DfD9488": {
-            "balance": "1000000000000000000000000000000000"
         }
     }
     }
@@ -225,13 +219,14 @@ function writeConfigs(argv: any) {
             },
             "celestia-cfg": {
                 "enable": true,
-                "rpc": "http://da:26658",
-                "tendermint-rpc": "http://da:26657",
+                "rpc": "http://host.docker.internal:26658",
+                "tendermint-rpc": "http://rpc-mocha.pops.one:26657",
                 "namespace-id": "000008e5f679bf7116cb",
-                "auth-token": argv.authToken,
-                "app-grpc": "da:9090",
-                "blobstream-address": argv.blobstreamAddress,
-                "block-drift": 150,
+                "auth-token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJBbGxvdyI6WyJwdWJsaWMiLCJyZWFkIiwid3JpdGUiLCJhZG1pbiJdfQ.K9bFh3x4MJTa7VjFnzHF76BsuTVx6dGip0nHr5h9Y_M",
+                "is-poster": true,
+                "gas-price": 0.2,
+                "event-channel-size": 100,
+                "blobstreamx-address": argv.blobstreamAddress,
             }
         },
         "persistent": {

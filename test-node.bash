@@ -5,8 +5,17 @@ set -e
 NITRO_NODE_VERSION=offchainlabs/nitro-node:v2.1.1-e9d8842-dev
 BLOCKSCOUT_VERSION=offchainlabs/blockscout:v1.0.0-c8db5b1
 NODE_PATH="/home/celestia/bridge/"
-APP_PATH="/home/celestia/.celestia-app"
+SUCCINCT_REPO_DIR="./succinctx"
+# The URL of the repository you want to clone
+SUCCINCT_REPO_URL="https://github.com/succinctlabs/succinctx.git"
 BLOBSTREAM_PATH="/opt/blobstream_address.txt"
+SUCCINCTX_DEPLOYER="da6ed55cb2894ac2c9c10209c09de8e8b9d109b910338d5bf3d747a7e1fc9eb9"
+GUARDIAN="0x966e6f22781EF6a6A82BBB4DB3df8E225DfD9488"
+CREATE2_SALT=0x04
+CHAIN_ID=1337
+L1_RPC="http://localhost:8545"
+ETHERSCAN_API_KEY='7C7C2SYTRJ752MM7A4KCABAPYTS3QAZXCZ'
+
 
 mydir=`dirname $0`
 cd "$mydir"
@@ -283,12 +292,6 @@ if $force_init; then
         docker volume rm $leftoverVolumes
     fi
 
-    echo == Bringing up Celestia Devnet
-    docker-compose up -d da
-    wait_up http://localhost:26659/header/1
-    export CELESTIA_NODE_AUTH_TOKEN="$(docker exec da-celestia celestia bridge auth admin --node.store  ${NODE_PATH})"
-
-
     echo == Generating l1 keys
     docker-compose run scripts write-accounts
     docker-compose run --entrypoint sh geth -c "echo passphrase > /datadir/passphrase"
@@ -316,6 +319,12 @@ if $force_init; then
       docker-compose up -d prysm_beacon_chain
       docker-compose up -d prysm_validator
     else
+    echo == Writing configs
+      docker-compose run scripts write-geth-genesis-config
+
+      echo == Initializing go-ethereum genesis configuration
+      docker-compose run geth init --datadir /datadir/ /config/geth_genesis.json
+
       docker-compose up -d geth
     fi
 
@@ -323,7 +332,9 @@ if $force_init; then
     docker-compose run scripts send-l1 --ethamount 1000 --to validator --wait
     docker-compose run scripts send-l1 --ethamount 1000 --to sequencer --wait
 
-    echo == Funding Orchestrator and Relayer
+    echo == Funding Orchestrator, Relayer, and Create2 signer
+    docker-compose run scripts send-l1 --ethamount 1000 --to address_0x3fab184622dc19b6109349b94811493bf2a45362 --wait
+    curl -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":["0xf8a58085174876e800830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222"],"id":1}' $L1_RPC
     docker-compose run scripts send-l1 --ethamount 1000 --to address_0x95359c3348e189ef7781546e6E13c80230fC9fB5 --wait
     docker-compose run scripts send-l1 --ethamount 1000 --to address_0x966e6f22781EF6a6A82BBB4DB3df8E225DfD9488 --wait
 
@@ -331,19 +342,58 @@ if $force_init; then
     docker-compose run scripts send-l1 --ethamount 1000 --to user_l1user --wait
     docker-compose run scripts send-l1 --ethamount 0.0001 --from user_l1user --to user_l1user_b --wait --delay 500 --times 500 > /dev/null &
 
-    echo == Bringing up Celestia Devnet
-    docker-compose up -d da
-    wait_up http://localhost:26659/header/1
-    export CELESTIA_NODE_AUTH_TOKEN="$(docker exec da-celestia celestia bridge auth admin --node.store  ${NODE_PATH})"
 
-    echo == Bringing up Blobstream Orchestrator
-    docker-compose up -d orchestrator
 
-    echo "Waiting for Blobstream Contracts"
-    sleep 100
-    echo == Bringing up Blobstream Relayer
-    docker-compose up -d relayer
-    sleep 30
+
+    echo == Cloning SuccinctX
+
+    # Check if the directory exists
+    if [ ! -d "$SUCCINCT_REPO_DIR" ]; then
+        echo "Repository directory does not exist. Cloning repository..."
+        git clone $SUCCINCT_REPO_URL $SUCCINCT_REPO_DIR
+    else
+        echo "Repository directory already exists. Skipping clone..."
+    fi
+
+    echo == Deploying SuccinctX Contracts
+
+    STARTING_DIR=$(echo "$PWD")
+
+    cd ${SUCCINCT_REPO_DIR}/contracts && forge install && forge build
+
+
+    WALLET_TYPE=PRIVATE_KEY PRIVATE_KEY=$SUCCINCTX_DEPLOYER GUARDIAN=$GUARDIAN CREATE2_SALT=0x7394a2a9e89e7eb9b501f23fea14f96d29ec5dda681e971ed0f042260e447a37 SUCCINCT_FEE_VAULT_1337=$GUARDIAN SUCCINCT_FEE_VAULT=$GUARDIAN PROVER_1337=$GUARDIAN PROVER=$GUARDIAN RPC_1337=$L1_RPC ETHERSCAN_API_KEY_1337=$ETHERSCAN_API_KEY ./script/deploy.sh "SuccinctGateway" "1337"
+
+    cd $STARTING_DIR
+
+    echo == Setting FunctionVerifier
+
+    current_dir=$(pwd)
+    echo "The current directory is: $current_dir"
+
+    forge create ./verifiers/next_header/FunctionVerifier.sol:FunctionVerifier --private-key $SUCCINCTX_DEPLOYER --rpc-url $L1_RPC
+    forge create ./verifiers/header_range/FunctionVerifier.sol:FunctionVerifier --private-key $SUCCINCTX_DEPLOYER --rpc-url $L1_RPC
+
+
+    # echo == Bringing up Celestia Devnet
+    # docker-compose up -d da
+    # wait_up http://localhost:26659/header/1
+    # export CELESTIA_NODE_AUTH_TOKEN="$(docker exec da-celestia celestia bridge auth admin --node.store  ${NODE_PATH})"
+
+
+    # echo == Bringing up Celestia Devnet
+    # docker-compose up -d da
+    # wait_up http://localhost:26659/header/1
+    # export CELESTIA_NODE_AUTH_TOKEN="$(docker exec da-celestia celestia bridge auth admin --node.store  ${NODE_PATH})"
+
+    # echo == Bringing up Blobstream Orchestrator
+    # docker-compose up -d orchestrator
+
+    # echo "Waiting for Blobstream Contracts"
+    # sleep 100
+    # echo == Bringing up Blobstream Relayer
+    # docker-compose up -d relayer
+    # sleep 30
 
     echo == Writing l2 chain config
     docker-compose run scripts write-l2-chain-config
@@ -352,8 +402,8 @@ if $force_init; then
     sleep 10
     echo == Deploying L2
     sequenceraddress=`docker-compose run scripts print-address --account sequencer | tail -n 1 | tr -d '\r\n'`
-    export BLOBSTREAM_ADDRESS="$(docker exec relayer cat ${BLOBSTREAM_PATH})"
-    echo == Blobstream Address: ${BLOBSTREAM_ADDRESS}
+    # export BLOBSTREAM_ADDRESS="$(docker exec relayer cat ${BLOBSTREAM_PATH})"
+    # echo == Blobstream Address: ${BLOBSTREAM_ADDRESS}
     docker-compose run --entrypoint /usr/local/bin/deploy poster --l1conn ws://geth:8546 --l1keystore /home/user/l1keystore --sequencerAddress $sequenceraddress --ownerAddress $sequenceraddress --l1DeployAccount $sequenceraddress --l1deployment /config/deployment.json --authorizevalidators 10 --wasmrootpath /home/user/target/machines --l1chainid=$l1chainid --l2chainconfig /config/l2_chain_config.json --l2chainname arb-dev-test --l2chaininfo /config/deployed_chain_info.json --blobstreamAddress $BLOBSTREAM_ADDRESS
     docker-compose run --entrypoint sh poster -c "jq [.[]] /config/deployed_chain_info.json > /config/l2_chain_info.json"
     echo == Writing configs
