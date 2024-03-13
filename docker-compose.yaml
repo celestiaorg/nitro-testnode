@@ -1,99 +1,13 @@
 version: "3.9"
 services:
-  orchestrator:
-    container_name: orchestrator
-    build:
-      dockerfile: Dockerfile
-    ports:
-      - "30000:30000"
-    environment:
-      - PRIVATE_KEY=da6ed55cb2894ac2c9c10209c09de8e8b9d109b910338d5bf3d747a7e1fc9eb9
-      - EVM_ACCOUNT=0x966e6f22781EF6a6A82BBB4DB3df8E225DfD9488
-      - CORE_RPC_HOST=da
-      - CORE_RPC_PORT=26657
-      - CORE_GRPC_HOST=da
-      - CORE_GRPC_PORT=9090
-      # the other peers will consider validator as a bootstrapper. So, it doesn't need to connect to any need during startup
-      - P2P_BOOTSTRAPPERS=
-      - P2P_IDENTITY=f7fd2be6b2abaa8519b0570d3a12e684a397456b0cc721198ebdd7e343cdd8f41813ef8aa857426c4e909c4fe19120a0f3f8c505286ca9d9249b5681475ec459
-      - P2P_LISTEN=/ip4/0.0.0.0/tcp/30000
-    entrypoint: [
-      "/bin/bash"
-    ]
-    command: [
-      "/opt/start_orchestrator_after_validator_created.sh"
-    ]
-    volumes:
-      - ${PWD}/celestia-validator/keyring-test:/opt/keyring-test:ro
-      - ${PWD}/scripts/start_orchestrator_after_validator_created.sh:/opt/start_orchestrator_after_validator_created.sh:ro
-
-  relayer:
-    container_name: relayer
-    build:
-      dockerfile: Dockerfile
-    depends_on:
-      - geth
-    ports:
-      - "30004:30000"
-    environment:
-      - EVM_ACCOUNT=0x95359c3348e189ef7781546e6E13c80230fC9fB5
-      - PRIVATE_KEY=0e9688e585562e828dcbd4f402d5eddf686f947fb6bf75894a85bf008b017401
-      - CORE_RPC_HOST=da
-      - CORE_RPC_PORT=26657
-      - CORE_GRPC_HOST=da
-      - CORE_GRPC_PORT=9090
-      - EVM_CHAIN_ID=32382
-      - EVM_ENDPOINT=http://geth:8545
-      - STARTING_NONCE=latest
-      - P2P_BOOTSTRAPPERS=/dns/orchestrator/tcp/30000/p2p/12D3KooWBSMasWzRSRKXREhediFUwABNZwzJbkZcYz5rYr9Zdmfn
-      - P2P_LISTEN=/ip4/0.0.0.0/tcp/30000
-    entrypoint: [
-      "/bin/bash"
-    ]
-    command: [
-      "/opt/start_relayer.sh"
-    ]
-    volumes:
-      - ${PWD}/scripts/start_relayer.sh:/opt/start_relayer.sh:ro
-      - ${PWD}/scripts/deploy_blobstream_contract.sh:/opt/deploy_blobstream_contract.sh:ro
-
-  blockscout:
-    depends_on:
-      - postgres
-      - sequencer
-    image: blockscout-testnode
-    restart: always
-    container_name: 'blockscout'
-    links:
-      - postgres:database
-    command:
-      - /bin/sh
-      - -c
-      - |
-        bin/blockscout eval "Elixir.Explorer.ReleaseTasks.create_and_migrate()"
-        node init/install.js postgres 5432
-        bin/blockscout start
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
-    env_file:
-      -  ./blockscout/nitro.env
-    environment:
-        ETHEREUM_JSONRPC_VARIANT: 'geth'
-        ETHEREUM_JSONRPC_HTTP_URL: http://sequencer:8547/
-        INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: "true"
-        DATABASE_URL: postgresql://postgres:@postgres:5432/blockscout
-        ECTO_USE_SSL: "false"
-    ports:
-      - "127.0.0.1:4000:4000"
-
   postgres:
     image: postgres:13.6
     restart: always
     container_name: 'postgres'
     environment:
-        POSTGRES_PASSWORD: ''
-        POSTGRES_USER: 'postgres'
-        POSTGRES_HOST_AUTH_METHOD: 'trust'
+      POSTGRES_PASSWORD: ''
+      POSTGRES_USER: 'postgres'
+      POSTGRES_HOST_AUTH_METHOD: 'trust'
     volumes:
       - "postgres-data:/var/lib/postgresql/data"
     ports:
@@ -218,10 +132,11 @@ services:
       - "seqdata:/home/user/.arbitrum/local/nitro"
       - "config:/config"
     command: --conf.file /config/sequencer_config.json --node.feed.output.enable --node.feed.output.port 9642  --http.api net,web3,eth,txpool,debug --node.seq-coordinator.my-url  ws://sequencer:8548 --graphql.enable --graphql.vhosts * --graphql.corsdomain *
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - geth
       - redis
-
 
   sequencer_b:
     pid: host # allow debugging
@@ -292,6 +207,8 @@ services:
       - "l1keystore:/home/user/l1keystore"
       - "config:/config"
     command: --conf.file /config/poster_config.json
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - geth
       - redis
@@ -337,6 +254,8 @@ services:
       - "l1keystore:/home/user/l1keystore"
       - "config:/config"
     command: --conf.file /config/validator_config.json --http.port 8547 --http.api net,web3,arb,debug --ws.port 8548
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - sequencer
       - validation_node
@@ -364,6 +283,8 @@ services:
     volumes:
       - "config:/config"
     command: --conf.file /config/validation_node_config.json
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     entrypoint: /usr/local/bin/nitro-val
 
   scripts:

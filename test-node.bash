@@ -22,19 +22,19 @@ HEADER_RANGE_VERIFIER="0xa4f573595dab0ea9a2c7A81bF08bb170cC6F6e35"
 ### BlobstreamX
 
 LOCAL_PROVE_MODE=true
-LOCAL_RELAY_MODE=false
-TENDERMINT_RPC_URL="http://rpc-mocha.pops.one:26657"
+LOCAL_RELAY_MODE=true
+TENDERMINT_RPC_URL="http://consensus-full-mocha-4.celestia-mocha.com:26657"
 SUCCINCT_RPC_URL=local
 SUCCINCT_API_KEY="" # Can leave blank for local proving
 POST_DELAY_MINUTES=1
 # WRAPPER_BINARY=
-BLOBSTREAMX_ADDR="0x8FFd044EdDD4B9d04a4a54Ca5a2b0EBb556Ea64c"
-NEXT_HEADER_FUNCTION_ID=0xb48af5deaef6d65e4259089cf49641eb8b95163cee15edfee93e27bf0201aef9 # Deployed function id
-HEADER_RANGE_FUNCTION_ID=0x5b9022ceb55eaba374a49d5a2ad47104a5d3fb9d518d03724b750af0c65b27ea # Deployed function id of header range
+BLOBSTREAMX_ADDR="0xa8973BDEf20fe4112C920582938EF2F022C911f5"
+NEXT_HEADER_FUNCTION_ID=0xa4475d95d2ad06e3609711c35560e237f605fe42f60992951b4f3d7631704e62 # Deployed function id
+HEADER_RANGE_FUNCTION_ID=0x5bbe7f26b960fff5b588cbea755ef3fc4d3dfb62569fbdeb1c655a5fc05d4f35 # Deployed function id of header range
 #Next header function id
-PROVE_BINARY_0xb48af5deaef6d65e4259089cf49641eb8b95163cee15edfee93e27bf0201aef9="./artifacts/header_range/header_range"
+PROVE_BINARY_0xa4475d95d2ad06e3609711c35560e237f605fe42f60992951b4f3d7631704e62="./artifacts/next_header/next_header"
 #Header range function id
-PROVE_BINARY_0x5b9022ceb55eaba374a49d5a2ad47104a5d3fb9d518d03724b750af0c65b27ea="./artifacts/next_header/next_header"
+PROVE_BINARY_0x5bbe7f26b960fff5b588cbea755ef3fc4d3dfb62569fbdeb1c655a5fc05d4f35="./artifacts/header_range/header_range"
 WRAPPER_BINARY="./artifacts/verifier-build"
 
 mydir=`dirname $0`
@@ -402,21 +402,11 @@ if $force_init; then
 
     cd ${BLOBSTREAMX_REPO_DIR}/contracts && forge install
 
-    DEPLOY=true PRIVATE_KEY=$SUCCINCTX_DEPLOYER RPC_URL=$L1_RPC CREATE2_SALT=0x7394a2a9e89e7eb9b501f23fea14f96d29ec5dda681e971ed0f042260e447a37 GUARDIAN_ADDRESS=$GUARDIAN GATEWAY_ADDRESS=$SUCCINCT_GATEWAY_1337  GENESIS_HEIGHT=1000 GENESIS_HEADER="93A5FE44AD4EBEEBCDFFD74ECA367E6E858D9836901CE9E4454A9F1E62B739AF" NEXT_HEADER_FUNCTION_ID=$NEXT_HEADER_FUNCTION_ID HEADER_RANGE_FUNCTION_ID=$HEADER_RANGE_FUNCTION_ID  UPDATE_GATEWAY=false UPDATE_GENESIS_STATE=false UPDATE_FUNCTION_IDS=false forge script script/Deploy.s.sol --rpc-url $L1_RPC --private-key $SUCCINCTX_DEPLOYER --broadcast
-
-    cd ..
-
-    PRIVATE_KEY=$SUCCINCTX_DEPLOYER POST_DELAY_MINUTES=$POST_DELAY_MINUTES CHAIN_ID=$CHAIN_ID WRAPPER_BINARY="./artifacts/verifier-build" PROVE_BINARY_0xb48af5deaef6d65e4259089cf49641eb8b95163cee15edfee93e27bf0201aef9=$PROVE_BINARY_0xb48af5deaef6d65e4259089cf49641eb8b95163cee15edfee93e27bf0201aef9 PROVE_BINARY_0x5b9022ceb55eaba374a49d5a2ad47104a5d3fb9d518d03724b750af0c65b27ea=$PROVE_BINARY_0x5b9022ceb55eaba374a49d5a2ad47104a5d3fb9d518d03724b750af0c65b27ea NEXT_HEADER_FUNCTION_ID=$NEXT_HEADER_FUNCTION_ID HEADER_RANGE_FUNCTION_ID=$HEADER_RANGE_FUNCTION_ID LOCAL_PROVE_MODE=true LOCAL_RELAY_MODE=false SUCCINCT_RPC_URL=local SUCCINCT_API_KEY="" RPC_URL=$L1_RPC TENDERMINT_RPC_URL=$TENDERMINT_RPC_URL CONTRACT_ADDRESS=$BLOBSTREAMX_ADDR cargo run --bin blobstreamx --release
+    DEPLOY=true PRIVATE_KEY=$SUCCINCTX_DEPLOYER RPC_URL=$L1_RPC CREATE2_SALT=0x7394a2a9e89e7eb9b501f23fea14f96d29ec5dda681e971ed0f042260e447a37 GUARDIAN_ADDRESS=$GUARDIAN GATEWAY_ADDRESS=$SUCCINCT_GATEWAY_1337  GENESIS_HEIGHT=1370486 GENESIS_HEADER="6F18C7423F0FF4383B958B5EF6EEFD9047554CA94D6BB35511BC9993903816E2" NEXT_HEADER_FUNCTION_ID=$NEXT_HEADER_FUNCTION_ID HEADER_RANGE_FUNCTION_ID=$HEADER_RANGE_FUNCTION_ID  UPDATE_GATEWAY=false UPDATE_GENESIS_STATE=false UPDATE_FUNCTION_IDS=false forge script script/Deploy.s.sol --rpc-url $L1_RPC --private-key $SUCCINCTX_DEPLOYER --broadcast
 
     cd $STARTING_DIR
 
     # Need to add logic to get circuits and what not, document steps, etc.
-
-    # echo == Bringing up Celestia Devnet
-    # docker-compose up -d da
-    # wait_up http://localhost:26659/header/1
-    # export CELESTIA_NODE_AUTH_TOKEN="$(docker exec da-celestia celestia bridge auth admin --node.store  ${NODE_PATH})"
-
 
     # echo == Bringing up Celestia Devnet
     # docker-compose up -d da
@@ -441,11 +431,11 @@ if $force_init; then
     sequenceraddress=`docker-compose run scripts print-address --account sequencer | tail -n 1 | tr -d '\r\n'`
     # export BLOBSTREAM_ADDRESS="$(docker exec relayer cat ${BLOBSTREAM_PATH})"
     # echo == Blobstream Address: ${BLOBSTREAM_ADDRESS}
-    docker-compose run --entrypoint /usr/local/bin/deploy poster --l1conn ws://geth:8546 --l1keystore /home/user/l1keystore --sequencerAddress $sequenceraddress --ownerAddress $sequenceraddress --l1DeployAccount $sequenceraddress --l1deployment /config/deployment.json --authorizevalidators 10 --wasmrootpath /home/user/target/machines --l1chainid=$l1chainid --l2chainconfig /config/l2_chain_config.json --l2chainname arb-dev-test --l2chaininfo /config/deployed_chain_info.json --blobstreamAddress $BLOBSTREAM_ADDRESS
+    docker-compose run --entrypoint /usr/local/bin/deploy poster --l1conn ws://geth:8546 --l1keystore /home/user/l1keystore --sequencerAddress $sequenceraddress --ownerAddress $sequenceraddress --l1DeployAccount $sequenceraddress --l1deployment /config/deployment.json --authorizevalidators 10 --wasmrootpath /home/user/target/machines --l1chainid=$l1chainid --l2chainconfig /config/l2_chain_config.json --l2chainname arb-dev-test --l2chaininfo /config/deployed_chain_info.json
     docker-compose run --entrypoint sh poster -c "jq [.[]] /config/deployed_chain_info.json > /config/l2_chain_info.json"
     echo == Writing configs
     echo == Auth Token: ${CELESTIA_NODE_AUTH_TOKEN}
-    docker-compose run scripts write-config --authToken $CELESTIA_NODE_AUTH_TOKEN --blobstreamAddress $BLOBSTREAM_ADDRESS
+    docker-compose run scripts write-config --authToken $CELESTIA_NODE_AUTH_TOKEN --blobstreamAddress $BLOBSTREAMX_ADDR
 
     echo == Initializing redis
     docker-compose run scripts redis-init --redundancy $redundantsequencers
@@ -489,6 +479,7 @@ if $force_init; then
         docker-compose run scripts bridge-to-l3 --ethamount 500 --wait --from "key_0x$devprivkey"
 
     fi
+
 fi
 
 if $run; then
@@ -501,5 +492,8 @@ if $run; then
     echo if things go wrong - use --init to create a new chain
     echo
 
-    docker-compose up $UP_FLAG $NODES
+    docker-compose up -d $NODES
+    # run blobstream prover and relayer
+    cd ${BLOBSTREAMX_REPO_DIR}
+    PRIVATE_KEY=da6ed55cb2894ac2c9c10209c09de8e8b9d109b910338d5bf3d747a7e1fc9eb9 POST_DELAY_MINUTES=$POST_DELAY_MINUTES CHAIN_ID=$CHAIN_ID WRAPPER_BINARY="./artifacts/verifier-build" PROVE_BINARY_0xa4475d95d2ad06e3609711c35560e237f605fe42f60992951b4f3d7631704e62=$PROVE_BINARY_0xa4475d95d2ad06e3609711c35560e237f605fe42f60992951b4f3d7631704e62 PROVE_BINARY_0x5bbe7f26b960fff5b588cbea755ef3fc4d3dfb62569fbdeb1c655a5fc05d4f35=$PROVE_BINARY_0x5bbe7f26b960fff5b588cbea755ef3fc4d3dfb62569fbdeb1c655a5fc05d4f35 NEXT_HEADER_FUNCTION_ID=$NEXT_HEADER_FUNCTION_ID HEADER_RANGE_FUNCTION_ID=$HEADER_RANGE_FUNCTION_ID LOCAL_PROVE_MODE=true LOCAL_RELAY_MODE=true SUCCINCT_RPC_URL=local SUCCINCT_API_KEY="" RPC_URL=$L1_RPC TENDERMINT_RPC_URL=$TENDERMINT_RPC_URL CONTRACT_ADDRESS=$BLOBSTREAMX_ADDR cargo run --bin blobstreamx --release
 fi
