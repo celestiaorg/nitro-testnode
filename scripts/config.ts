@@ -181,7 +181,8 @@ function writeConfigs(argv: any) {
             },
             "sequencer": false,
             "dangerous": {
-                "no-sequencer-coordinator": false
+                "no-sequencer-coordinator": false,
+                "disable-blob-reader": true,
             },
             "delayed-sequencer": {
                 "enable": false
@@ -223,8 +224,8 @@ function writeConfigs(argv: any) {
                 "enable": true,
                 "rpc": "http://host.docker.internal:26658",
                 "tendermint-rpc": "http://consensus-full-mocha-4.celestia-mocha.com:26657",
-                "namespace-id": "000008e5f679bf7116cb",
-                "auth-token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJBbGxvdyI6WyJwdWJsaWMiLCJyZWFkIiwid3JpdGUiLCJhZG1pbiJdfQ.fJmNBZmIWLHCHOVRb2_hlIO4YuwWISDCkwF7X8ISpJg",
+                "namespace-id": "",
+                "auth-token": "",
                 "is-poster": true,
                 "gas-price": 0.3,
                 "event-channel-size": 100,
@@ -233,8 +234,9 @@ function writeConfigs(argv: any) {
         },
         "execution": {
             "sequencer": {
-                "enable": true,
+                "enable": false,
             },
+            "forwarding-target": "null",
         },
         "persistent": {
             "chain": "local"
