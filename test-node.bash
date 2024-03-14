@@ -4,6 +4,38 @@ set -e
 
 NITRO_NODE_VERSION=offchainlabs/nitro-node:v2.2.2-8f33fea-dev
 BLOCKSCOUT_VERSION=offchainlabs/blockscout:v1.0.0-c8db5b1
+NODE_PATH="/home/celestia/bridge/"
+SUCCINCT_REPO_DIR="./succinctx"
+SUCCINCT_REPO_URL="https://github.com/succinctlabs/succinctx.git"
+BLOBSTREAMX_REPO_DIR="./blobstreamx"
+BLOBSTREAMX_REPO_ULR="https://github.com/succinctlabs/blobstreamx.git"
+SUCCINCTX_DEPLOYER="da6ed55cb2894ac2c9c10209c09de8e8b9d109b910338d5bf3d747a7e1fc9eb9"
+GUARDIAN="0x966e6f22781EF6a6A82BBB4DB3df8E225DfD9488"
+CREATE2_SALT=0x7394a2a9e89e7eb9b501f23fea14f96d29ec5dda681e971ed0f042260e447a37
+CHAIN_ID=1337
+L1_RPC="http://localhost:8545"
+ETHERSCAN_API_KEY=''
+SUCCINCT_GATEWAY_1337="0xcfeb9268919890ff929006d4a5a748bcb4c505c5"
+NEXT_HEADER_VERIFIER="0xf3D1B74d3e062aC91a3b47AC16Ed443034e783cF"
+HEADER_RANGE_VERIFIER="0xa4f573595dab0ea9a2c7A81bF08bb170cC6F6e35"
+
+### BlobstreamX
+
+LOCAL_PROVE_MODE=true
+LOCAL_RELAY_MODE=true
+TENDERMINT_RPC_URL="http://consensus-full-mocha-4.celestia-mocha.com:26657"
+SUCCINCT_RPC_URL=local
+SUCCINCT_API_KEY="" # Can leave blank for local proving
+POST_DELAY_MINUTES=1
+# WRAPPER_BINARY=
+BLOBSTREAMX_ADDR="0xa8973BDEf20fe4112C920582938EF2F022C911f5"
+NEXT_HEADER_FUNCTION_ID=0xa4475d95d2ad06e3609711c35560e237f605fe42f60992951b4f3d7631704e62 # Deployed function id
+HEADER_RANGE_FUNCTION_ID=0x5bbe7f26b960fff5b588cbea755ef3fc4d3dfb62569fbdeb1c655a5fc05d4f35 # Deployed function id of header range
+#Next header function id
+PROVE_BINARY_0xa4475d95d2ad06e3609711c35560e237f605fe42f60992951b4f3d7631704e62="./artifacts/next_header/next_header"
+#Header range function id
+PROVE_BINARY_0x5bbe7f26b960fff5b588cbea755ef3fc4d3dfb62569fbdeb1c655a5fc05d4f35="./artifacts/header_range/header_range"
+WRAPPER_BINARY="./artifacts/verifier-build"
 
 mydir=`dirname $0`
 cd "$mydir"
@@ -282,6 +314,26 @@ if $force_build; then
     docker compose build --no-rm $NODES scripts
 fi
 
+# Helper method that waits for a given URL to be up. Can't use
+# cURL's built-in retry logic because connection reset errors
+# are ignored unless you're using a very recent version of cURL
+function wait_up {
+  echo -n "Waiting for $1 to come up..."
+  i=0
+  until curl -s -f -o /dev/null "$1"
+  do
+    echo -n .
+    sleep 0.25
+
+    ((i=i+1))
+    if [ "$i" -eq 600 ]; then
+      echo " Timeout!" >&2
+      exit 1
+    fi
+  done
+  echo "Done!"
+}
+
 if $force_init; then
     echo == Removing old data..
     docker compose down
@@ -301,6 +353,7 @@ if $force_init; then
     docker compose run --entrypoint sh geth -c "chown -R 1000:1000 /keystore"
     docker compose run --entrypoint sh geth -c "chown -R 1000:1000 /config"
 
+    echo == Bringing up L1
     if $consensusclient; then
       echo == Writing configs
       docker compose run scripts write-geth-genesis-config
@@ -329,9 +382,81 @@ if $force_init; then
     docker compose run scripts send-l1 --ethamount 1000 --to sequencer --wait
     docker compose run scripts send-l1 --ethamount 1000 --to l2owner --wait
 
+    echo == Funding Orchestrator, Relayer, and Create2 signer
+    docker-compose run scripts send-l1 --ethamount 1000 --to address_0x3fab184622dc19b6109349b94811493bf2a45362 --wait
+    curl -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":["0xf8a58085174876e800830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222"],"id":1}' $L1_RPC
+    docker-compose run scripts send-l1 --ethamount 1000 --to address_0x95359c3348e189ef7781546e6E13c80230fC9fB5 --wait
+    docker-compose run scripts send-l1 --ethamount 1000 --to address_0x966e6f22781EF6a6A82BBB4DB3df8E225DfD9488 --wait
+
     echo == create l1 traffic
     docker compose run scripts send-l1 --ethamount 1000 --to user_l1user --wait
     docker compose run scripts send-l1 --ethamount 0.0001 --from user_l1user --to user_l1user_b --wait --delay 500 --times 1000000 > /dev/null &
+
+    echo == Cloning SuccinctX
+
+    # Check if the directory exists
+    if [ ! -d "$SUCCINCT_REPO_DIR" ]; then
+        echo "Repository directory does not exist. Cloning repository..."
+        git clone $SUCCINCT_REPO_URL $SUCCINCT_REPO_DIR
+    else
+        echo "Repository directory already exists. Skipping clone..."
+    fi
+
+    echo == Deploying SuccinctX Contracts
+
+    STARTING_DIR=$(echo "$PWD")
+
+    cd ${SUCCINCT_REPO_DIR}/contracts && forge install && forge build
+
+
+    WALLET_TYPE=PRIVATE_KEY PRIVATE_KEY=$SUCCINCTX_DEPLOYER GUARDIAN=$GUARDIAN CREATE2_SALT=0x7394a2a9e89e7eb9b501f23fea14f96d29ec5dda681e971ed0f042260e447a37 SUCCINCT_FEE_VAULT_1337=$GUARDIAN SUCCINCT_FEE_VAULT=$GUARDIAN PROVER_1337=$GUARDIAN PROVER=$GUARDIAN RPC_1337=$L1_RPC ETHERSCAN_API_KEY_1337=$ETHERSCAN_API_KEY ./script/deploy.sh "SuccinctGateway" "1337"
+
+    cd $STARTING_DIR
+
+    echo == Setting FunctionVerifier
+
+    cd ./verifiers/next_header/
+    forge create src/FunctionVerifier.sol:FunctionVerifier --private-key $SUCCINCTX_DEPLOYER --rpc-url $L1_RPC
+    cast send $SUCCINCT_GATEWAY_1337 "registerFunction(address,address,bytes32)" 0x0000000000000000000000000000000000000000 $NEXT_HEADER_VERIFIER 0x4df6a4c89c20a93bf3668adcc38ea661d30aa3eca7dee9c4ee9fe37dd8697a1c --private-key $SUCCINCTX_DEPLOYER --rpc-url $L1_RPC
+
+    cd $STARTING_DIR
+
+    cd ./verifiers/header_range/
+    forge create src/FunctionVerifier.sol:FunctionVerifier --private-key $SUCCINCTX_DEPLOYER --rpc-url $L1_RPC
+    cast send $SUCCINCT_GATEWAY_1337 "registerFunction(address,address,bytes32)" 0x0000000000000000000000000000000000000000 $HEADER_RANGE_VERIFIER 0xfe3236aade450ae5075091484865c29ccae6d9bce6079e83e83ac980e6a49b04 --private-key $SUCCINCTX_DEPLOYER --rpc-url $L1_RPC
+
+    cd $STARTING_DIR
+
+    echo == Deploying BlobstreamX
+
+    if [ ! -d "$BLOBSTREAMX_REPO_DIR" ]; then
+        echo "Repository directory does not exist. Cloning repository..."
+        git clone $BLOBSTREAMX_REPO_ULR $BLOBSTREAMX_REPO_DIR
+    else
+        echo "Repository directory already exists. Skipping clone..."
+    fi
+
+    cd ${BLOBSTREAMX_REPO_DIR}/contracts && forge install
+
+    DEPLOY=true PRIVATE_KEY=$SUCCINCTX_DEPLOYER RPC_URL=$L1_RPC CREATE2_SALT=0x7394a2a9e89e7eb9b501f23fea14f96d29ec5dda681e971ed0f042260e447a37 GUARDIAN_ADDRESS=$GUARDIAN GATEWAY_ADDRESS=$SUCCINCT_GATEWAY_1337  GENESIS_HEIGHT=1370486 GENESIS_HEADER="6F18C7423F0FF4383B958B5EF6EEFD9047554CA94D6BB35511BC9993903816E2" NEXT_HEADER_FUNCTION_ID=$NEXT_HEADER_FUNCTION_ID HEADER_RANGE_FUNCTION_ID=$HEADER_RANGE_FUNCTION_ID  UPDATE_GATEWAY=false UPDATE_GENESIS_STATE=false UPDATE_FUNCTION_IDS=false forge script script/Deploy.s.sol --rpc-url $L1_RPC --private-key $SUCCINCTX_DEPLOYER --broadcast
+
+    cd $STARTING_DIR
+
+    # Need to add logic to get circuits and what not, document steps, etc.
+
+    # echo == Bringing up Celestia Devnet
+    # docker-compose up -d da
+    # wait_up http://localhost:26659/header/1
+    # export CELESTIA_NODE_AUTH_TOKEN="$(docker exec da-celestia celestia bridge auth admin --node.store  ${NODE_PATH})"
+
+    # echo == Bringing up Blobstream Orchestrator
+    # docker-compose up -d orchestrator
+
+    # echo "Waiting for Blobstream Contracts"
+    # sleep 100
+    # echo == Bringing up Blobstream Relayer
+    # docker-compose up -d relayer
+    # sleep 30
 
     echo == Writing l2 chain config
     docker compose run scripts write-l2-chain-config
@@ -344,6 +469,7 @@ if $force_init; then
 
     if $simple; then
         echo == Writing configs
+        docker-compose run scripts write-config --blobstreamAddress $BLOBSTREAMX_ADDR
         docker compose run scripts write-config --simple
     else
         echo == Writing configs
@@ -431,6 +557,7 @@ if $force_init; then
         fi
 
     fi
+
 fi
 
 if $run; then
@@ -443,5 +570,8 @@ if $run; then
     echo if things go wrong - use --init to create a new chain
     echo
 
-    docker compose up $UP_FLAG $NODES
+    docker-compose up -d $NODES
+    # run blobstream prover and relayer
+    cd ${BLOBSTREAMX_REPO_DIR}
+    PRIVATE_KEY=da6ed55cb2894ac2c9c10209c09de8e8b9d109b910338d5bf3d747a7e1fc9eb9 POST_DELAY_MINUTES=$POST_DELAY_MINUTES CHAIN_ID=$CHAIN_ID WRAPPER_BINARY="./artifacts/verifier-build" PROVE_BINARY_0xa4475d95d2ad06e3609711c35560e237f605fe42f60992951b4f3d7631704e62=$PROVE_BINARY_0xa4475d95d2ad06e3609711c35560e237f605fe42f60992951b4f3d7631704e62 PROVE_BINARY_0x5bbe7f26b960fff5b588cbea755ef3fc4d3dfb62569fbdeb1c655a5fc05d4f35=$PROVE_BINARY_0x5bbe7f26b960fff5b588cbea755ef3fc4d3dfb62569fbdeb1c655a5fc05d4f35 NEXT_HEADER_FUNCTION_ID=$NEXT_HEADER_FUNCTION_ID HEADER_RANGE_FUNCTION_ID=$HEADER_RANGE_FUNCTION_ID LOCAL_PROVE_MODE=true LOCAL_RELAY_MODE=true SUCCINCT_RPC_URL=local SUCCINCT_API_KEY="" RPC_URL=$L1_RPC TENDERMINT_RPC_URL=$TENDERMINT_RPC_URL CONTRACT_ADDRESS=$BLOBSTREAMX_ADDR cargo run --bin blobstreamx --release
 fi

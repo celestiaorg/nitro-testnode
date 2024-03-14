@@ -28,6 +28,8 @@ async function main() {
       l2url: { string: true, default: "ws://sequencer:8548" },
       l3url: { string: true, default: "ws://l3node:3348" },
       validationNodeUrl: { string: true, default: "ws://validation_node:8549" },
+      authToken: { string: true },
+      blobstreamAddress: { string: true },
       l2owner: { string: true, default: "0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E" },
     })
     .options(stressOptions)
