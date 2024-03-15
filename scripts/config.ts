@@ -229,7 +229,7 @@ function writeConfigs(argv: any) {
                 "is-poster": true,
                 "gas-price": 0.3,
                 "event-channel-size": 100,
-                "blobstreamx-address": argv.blobstreamAddress,
+                "blobstreamx-address": "0xa8973BDEf20fe4112C920582938EF2F022C911f5",
             }
         },
         "execution": {
