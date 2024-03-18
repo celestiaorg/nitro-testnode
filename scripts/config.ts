@@ -224,7 +224,7 @@ function writeConfigs(argv: any) {
                 "enable": true,
                 "rpc": "http://host.docker.internal:26658",
                 "tendermint-rpc": "http://consensus-full-mocha-4.celestia-mocha.com:26657",
-                "namespace-id": "",
+                "namespace-id": "000008e5f679bf7116cb",
                 "auth-token": "",
                 "is-poster": true,
                 "gas-price": 0.3,

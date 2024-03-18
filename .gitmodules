@@ -4,4 +4,7 @@
 [submodule "succinctx"]
 	path = succinctx
         url = https://github.com/succinctlabs/succinctx.git
+[submodule "blobstreamx"]
+	path = blobstreamx
+        url = https://github.com/succinctlabs/blobstreamx.git
 
