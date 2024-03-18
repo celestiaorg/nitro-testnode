@@ -6,73 +6,41 @@ Nitro-testnode brings up a full environment for local nitro testing (with or wit
 
 * bash shell
 * docker and docker-compose
+* a celestia light node and an address with tokens on Mocha
+* a cloud instance with 64CPU and 128GB Ram in order to run the BlobstreamX Prover
 
 All must be installed in PATH.
 
-## Using latest nitro release (recommended)
+## Using Celestia's Nitro v2.3.1
 
-### Without Stylus support
+Check out this [branch](https://github.com/celestiaorg/nitro/tree/celestia-v2.3.1)
 
-Check out the release branch of the repository.
+Use the test-node submodule of nitro repository, and make sure you get the `succinctx` and `blobstreamx` submodules.
 
-> Notice: release branch may be force-pushed at any time.
-
+### Get the v2.3.1 version
 ```bash
-git clone -b release --recurse-submodules https://github.com/OffchainLabs/nitro-testnode.git
-cd nitro-testnode
-```
-
-Initialize the node
-
-```bash
-./test-node.bash --init
-```
-To see more options, use `--help`.
-
-### With Stylus support
-
-Check out the stylus branch of the repository.
-> Notice: stylus branch may be force-pushed at any time.
-
-```bash
-git clone -b stylus --recurse-submodules https://github.com/OffchainLabs/nitro-testnode.git
-cd nitro-testnode
-```
-
-Initialize the node
-
-```bash
-./test-node.bash --init
-```
-To see more options, use `--help`.
-
-## Using current nitro code (local compilation)
-
-Check out the nitro or stylus repository. Use the test-node submodule of nitro repository.
-
-> Notice: testnode may not always be up-to-date with config options of current nitro node, and is not considered stable when operated in that way.
-
-### Without Stylus support
-```bash
-git clone --recurse-submodules https://github.com/OffchainLabs/nitro.git
+git clone --recurse-submodules https://github.com/celestiaorg/nitro
+git checkout celestia-v2.3.1
 cd nitro/nitro-testnode
 ```
 
-Initialize the node in dev-mode (this will build the docker images from source)
+## Steps to run e2e testing
+
+1. Make sure you have a celestia light node running against Mocha and have some tokens to post blobs ([docs here](https://docs.celestia.org/nodes/light-node#start-the-light-node))
+2. In the [scripts/config.ts](https://github.com/celestiaorg/nitro-testnode/blob/celestia-v2.3.1/scripts/config.ts#L225-L232) file, make sure you put your light node under "rpc" (we use host.docker.internal to connect the docker containers to a light node running on the host, but you can modify this to your liking), then make sure to use a "tendermint-rpc" you have access to. Finally, you can pick a namespace or leave it as is, the "auth-token" you will get from your [light node](https://docs.celestia.org/developers/node-tutorial#auth-token), and leave everything else as is.
+3. Go to the succinctx submodule and remove the `verify` flag [here](https://github.com/succinctlabs/succinctx/blob/18611dc4ff59ac53f895cd45588d562f0c088758/contracts/script/deploy.sh#L37C88-L37C152).
+4. Finally, `cd blobstreamx` and then run `cargo run --bin genesis -- --block $BLOCK_NUMER` where $BLOCK_NUMBER is the latest Mocha block, then take the height and the hash and use them in the `GENESIS_HEIGHT` and `GENESIS_HEADER` environment variables in the testnode-bash script, or in a .env file inside of BlobstreamX.
+
+Once you have everything setup, you can start testing the e2e setup by running
+
 ```bash
 ./test-node.bash --init --dev
 ```
 To see more options, use `--help`.
 
-### With Stylus support
+And can add `--validate` for validation mode, and thus use the preimage oracle for Celestia
 ```bash
-git clone --recurse-submodules https://github.com/OffchainLabs/stylus.git
-cd stylus/nitro-testnode
-```
-
-Initialize the node in dev-mode (this will build the docker images from source)
-```bash
-./test-node.bash --init --dev
+./test-node.bash --init --dev --validate
 ```
 To see more options, use `--help`.
 
@@ -117,11 +85,3 @@ user_fee_token_deployer:    0x2AC5278D230f88B481bBE4A94751d7188ef48Ca2
 ```
 
 While not a named account, 0x3f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e is funded on all test chains.
-
-## Contact
-
-Discord - [Arbitrum](https://discord.com/invite/5KE54JwyTs)
-
-Twitter: [Arbitrum](https://twitter.com/arbitrum)
-
-
