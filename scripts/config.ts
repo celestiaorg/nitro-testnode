@@ -220,16 +220,17 @@ function writeConfigs(argv: any) {
                     "jwtsecret": valJwtSecret,
                 }
             },
-            "celestia-cfg": {
+           "celestia-cfg": {
                 "enable": true,
+                "gas-price": 0.3,
                 "rpc": "http://host.docker.internal:26658",
-                "tendermint-rpc": "http://consensus-full-mocha-4.celestia-mocha.com:26657",
                 "namespace-id": "000008e5f679bf7116cb",
                 "auth-token": "",
-                "is-poster": true,
-                "gas-price": 0.3,
-                "event-channel-size": 100,
-                "blobstreamx-address": "0xa8973BDEf20fe4112C920582938EF2F022C911f5",
+                "validator-config": {
+                    "tendermint-rpc": "",
+                    "eth-ws": "http://localhost:8545",
+                    "blobstream": "0xa8973BDEf20fe4112C920582938EF2F022C911f5",
+                },
             }
         },
         "execution": {
