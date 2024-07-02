@@ -222,7 +222,7 @@ function writeConfigs(argv: any) {
             },
             "celestia-cfg": {
                 "enable": true,
-                "url": "http://localhost:9867"
+                "url": "http://host.docker.internal:9876"
             }
         },
         "execution": {

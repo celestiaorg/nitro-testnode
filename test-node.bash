@@ -7,7 +7,7 @@ BLOCKSCOUT_VERSION=offchainlabs/blockscout:v1.0.0-c8db5b1
 
 # This commit matches the v1.2.1 contracts, with additional fixes for rollup deployment script.
 # Once v1.2.2 is released, we can switch to that version.
-DEFAULT_NITRO_CONTRACTS_VERSION="a00d2faac01e050339ff7b0ac5bc91df06e8dbff"
+DEFAULT_NITRO_CONTRACTS_VERSION="73e9860a8c6df29d017a47351e4ae453aaf12db7"
 DEFAULT_TOKEN_BRIDGE_VERSION="v1.2.1"
 
 # Set default versions if not overriden by provided env vars
