@@ -168,10 +168,10 @@ function writeConfigs(argv: any) {
                 "dangerous": {
                     "without-block-validator": false
                 },
-                "parent-chain-wallet" : {
+                "parent-chain-wallet": {
                     "account": namedAddress("validator"),
                     "password": consts.l1passphrase,
-                    "pathname": consts.l1keystore,    
+                    "pathname": consts.l1keystore,
                 },
                 "disable-challenge": false,
                 "enable": false,
@@ -202,10 +202,10 @@ function writeConfigs(argv: any) {
                 "redis-url": argv.redisUrl,
                 "max-delay": "30s",
                 "l1-block-bound": "ignore",
-                "parent-chain-wallet" : {
+                "parent-chain-wallet": {
                     "account": namedAddress("sequencer"),
                     "password": consts.l1passphrase,
-                    "pathname": consts.l1keystore,    
+                    "pathname": consts.l1keystore,
                 },
                 "data-poster": {
                     "redis-signer": {
@@ -215,12 +215,17 @@ function writeConfigs(argv: any) {
                 },
             },
             "block-validator": {
-				"validation-server" : {
-					"url": argv.validationNodeUrl,
-					"jwtsecret": valJwtSecret,
-				},
-                "dangerous": {"reset-block-validation": false},
+                "validation-server": {
+                    "url": argv.validationNodeUrl,
+                    "jwtsecret": valJwtSecret,
+                },
+                "dangerous": { "reset-block-validation": false },
             },
+            "celestia-cfg": {
+                "enable": true,
+                "url": "http://host.docker.internal:9876"
+            },
+            "da-preference": ["celestia"],
             "feed": {
                 "input": {
                     "url": [], // websocket urls
@@ -310,13 +315,13 @@ function writeConfigs(argv: any) {
         fs.writeFileSync(path.join(consts.configpath, "sequencer_config.json"), JSON.stringify(sequencerConfig))
 
         let posterConfig = JSON.parse(baseConfJSON)
-    if (argv.espresso) {
-        posterConfig.node.feed.input.url.push("ws://sequencer:9642")
-        posterConfig.node["batch-poster"]["hotshot-url"] = argv.espressoUrl
-        posterConfig.node["batch-poster"]["light-client-address"] = argv.lightClientAddress
-    } else {
-        posterConfig.node["seq-coordinator"].enable = true
-    }
+        if (argv.espresso) {
+            posterConfig.node.feed.input.url.push("ws://sequencer:9642")
+            posterConfig.node["batch-poster"]["hotshot-url"] = argv.espressoUrl
+            posterConfig.node["batch-poster"]["light-client-address"] = argv.lightClientAddress
+        } else {
+            posterConfig.node["seq-coordinator"].enable = true
+        }
         posterConfig.node["batch-poster"].enable = true
         fs.writeFileSync(path.join(consts.configpath, "poster_config.json"), JSON.stringify(posterConfig))
     }
@@ -449,11 +454,11 @@ export const writeConfigCommand = {
     describe: "writes config files",
     builder: {
         simple: {
-          boolean: true,
-          describe: "simple config (sequencer is also poster, validator)",
-          default: false,
+            boolean: true,
+            describe: "simple config (sequencer is also poster, validator)",
+            default: false,
         },
-      },    
+    },
     handler: (argv: any) => {
         writeConfigs(argv)
     }

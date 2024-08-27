@@ -234,11 +234,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 if $espresso; then
-    NITRO_CONTRACTS_REPO=https://github.com/EspressoSystems/nitro-contracts.git
-    NITRO_CONTRACTS_BRANCH=develop
+    NITRO_CONTRACTS_REPO=https://github.com/celestiaorg/nitro-contracts.git
+    NITRO_CONTRACTS_BRANCH=celestia-espresso-test
     export NITRO_CONTRACTS_REPO
     export NITRO_CONTRACTS_BRANCH
-    echo "Running espresso mode"
+    echo "Running espresso and celestia mode"
     echo "Using NITRO_CONTRACTS_REPO: $NITRO_CONTRACTS_REPO"
     echo "Using NITRO_CONTRACTS_BRANCH: $NITRO_CONTRACTS_BRANCH"
 fi
@@ -345,9 +345,9 @@ if $dev_build_nitro; then
   docker tag nitro-node-dev:latest nitro-node-dev-testnode
 else
   if $latest_espresso_image; then
-    docker pull $ESPRESSO_VERSION 
+    docker pull $ESPRESSO_VERSION
     docker tag $ESPRESSO_VERSION nitro-node-dev-testnode
-  else 
+  else
      docker pull $NITRO_NODE_VERSION
      docker tag $NITRO_NODE_VERSION nitro-node-dev-testnode
   fi
