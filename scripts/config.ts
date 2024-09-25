@@ -168,10 +168,10 @@ function writeConfigs(argv: any) {
                 "dangerous": {
                     "without-block-validator": false
                 },
-                "parent-chain-wallet" : {
+                "parent-chain-wallet": {
                     "account": namedAddress("validator"),
                     "password": consts.l1passphrase,
-                    "pathname": consts.l1keystore,    
+                    "pathname": consts.l1keystore,
                 },
                 "disable-challenge": false,
                 "enable": false,
@@ -202,10 +202,10 @@ function writeConfigs(argv: any) {
                 "redis-url": argv.redisUrl,
                 "max-delay": "30s",
                 "l1-block-bound": "ignore",
-                "parent-chain-wallet" : {
+                "parent-chain-wallet": {
                     "account": namedAddress("sequencer"),
                     "password": consts.l1passphrase,
-                    "pathname": consts.l1keystore,    
+                    "pathname": consts.l1keystore,
                 },
                 "data-poster": {
                     "redis-signer": {
@@ -219,7 +219,12 @@ function writeConfigs(argv: any) {
                     "url": argv.validationNodeUrl,
                     "jwtsecret": valJwtSecret,
                 }
-            }
+            },
+            "celestia-cfg": {
+                "enable": true,
+                "url": "http://host.docker.internal:9876"
+            },
+            "da-preference": ["celestia"]
         },
         "execution": {
             "sequencer": {
@@ -391,11 +396,11 @@ export const writeConfigCommand = {
     describe: "writes config files",
     builder: {
         simple: {
-          boolean: true,
-          describe: "simple config (sequencer is also poster, validator)",
-          default: false,
+            boolean: true,
+            describe: "simple config (sequencer is also poster, validator)",
+            default: false,
         },
-      },    
+    },
     handler: (argv: any) => {
         writeConfigs(argv)
     }
