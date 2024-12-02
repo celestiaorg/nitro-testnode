@@ -191,7 +191,7 @@ function writeConfigs(argv: any) {
                 "dangerous": {
                     "without-block-validator": false
                 },
-                "parent-chain-wallet" : {
+                "parent-chain-wallet": {
                     "account": namedAddress("validator"),
                     "password": consts.l1passphrase,
                     "pathname": consts.l1keystore,
@@ -225,7 +225,7 @@ function writeConfigs(argv: any) {
                 "redis-url": argv.redisUrl,
                 "max-delay": "30s",
                 "l1-block-bound": "ignore",
-                "parent-chain-wallet" : {
+                "parent-chain-wallet": {
                     "account": namedAddress("sequencer"),
                     "password": consts.l1passphrase,
                     "pathname": consts.l1keystore,
@@ -253,7 +253,12 @@ function writeConfigs(argv: any) {
                 // TODO Fix das config to not need this redundant config
                 "parent-chain-node-url": argv.l1url,
                 "sequencer-inbox-address": "not_set"
-            }
+            },
+            "celestia-cfg": {
+                "enable": true,
+                "url": "http://host.docker.internal:9875"
+            },
+            "da-preference": ["celestia", "anytrust"]
         },
         "execution": {
             "sequencer": {
@@ -519,9 +524,9 @@ export const writeConfigCommand = {
     describe: "writes config files",
     builder: {
         simple: {
-          boolean: true,
-          describe: "simple config (sequencer is also poster, validator)",
-          default: false,
+            boolean: true,
+            describe: "simple config (sequencer is also poster, validator)",
+            default: false,
         },
         anytrust: {
             boolean: true,
@@ -539,7 +544,7 @@ export const writeConfigCommand = {
             default: ""
         },
 
-      },
+    },
     handler: (argv: any) => {
         writeConfigs(argv)
     }
@@ -615,8 +620,8 @@ export const writeL2DASKeysetConfigCommand = {
             describe: "DAS committee member B BLS pub key",
             default: ""
         },
-      },
+    },
     handler: (argv: any) => {
-       writeL2DASKeysetConfig(argv)
+        writeL2DASKeysetConfig(argv)
     }
 }

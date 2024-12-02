@@ -168,6 +168,8 @@ services:
       - "config:/config"
       - "tokenbridge-data:/tokenbridge-data"
     command: --conf.file /config/sequencer_config.json --node.feed.output.enable --node.feed.output.port 9642  --http.api net,web3,eth,txpool,debug --node.seq-coordinator.my-url  ws://sequencer:8548 --graphql.enable --graphql.vhosts * --graphql.corsdomain *
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - geth
 
@@ -245,6 +247,8 @@ services:
       - "l1keystore:/home/user/l1keystore"
       - "config:/config"
     command: --conf.file /config/poster_config.json
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - geth
       - redis
@@ -293,6 +297,8 @@ services:
       - "l1keystore:/home/user/l1keystore"
       - "config:/config"
     command: --conf.file /config/validator_config.json --http.port 8547 --http.api net,web3,arb,debug --ws.port 8548
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - sequencer
       - validation_node
@@ -322,6 +328,8 @@ services:
     volumes:
       - "config:/config"
     command: --conf.file /config/validation_node_config.json
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   scripts:
     build: scripts/
