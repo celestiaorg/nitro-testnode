@@ -88,17 +88,16 @@ sleep 2  # Give processes time to shut down
 # Clone or use existing celestia-node
 if [ ! -d "${ROOT_DIR}/celestia-node" ]; then
     echo "Cloning celestia-node repository..."
-    git clone https://github.com/Ferret-san/celestia-node.git
+    git clone https://github.com/celestiaorg/celestia-node.git
 else
     echo "Using existing celestia-node repository..."
 fi
 
 cd ${ROOT_DIR}/celestia-node
-git checkout easy-node
 
 # Start light node in the background with logging
 echo "Starting light node..."
-just light arabica up > ${ROOT_DIR}/logs/light-node.log 2>&1 &
+make light-arabica-up > ${ROOT_DIR}/logs/light-node.log 2>&1 &
 LIGHT_PID=$!
 
 # Give the light node some time to start
@@ -131,7 +130,6 @@ echo "Starting celestia-server..."
     --celestia.gas-multiplier 1.01 \
     --celestia.namespace-id "000008e5f679bf7116cb" \
     --celestia.rpc "http://localhost:26658" \
-    --celestia.keyname "my_celes_key" \
     --celestia.auth-token "${AUTH_TOKEN}" \
     --rpc-port 9875 > ${ROOT_DIR}/logs/celestia-server.log 2>&1 &
 SERVER_PID=$!
