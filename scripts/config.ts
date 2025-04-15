@@ -263,7 +263,7 @@ function writeConfigs(argv: any) {
             },
             "celestia-cfg": {
                 "enable": true,
-                "url": "http://host.docker.internal:9875"
+                "url": "http://celestia-server:26657"
             },
             "da-preference": ["celestia", "anytrust"]
         },
