@@ -87,9 +87,9 @@ services:
       - ${HOME}/.celestia-light-mocha-4:/home/celestia
 
   celestia-server:
-    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.4.2
+    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.4.3
     container_name: celestia-server
-    entrypoint: ["/bin/celestia-server", "--enable-rpc", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", "", "--celestia.gas-price", "0.01", "--celestia.gas-multiplier", "1.01", "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://localestia:26658"]
+    entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", "",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://localestia:26658"]
     ports:
       - "1317:1317"
       - "9090:9090"
@@ -100,11 +100,11 @@ services:
       - localestia
 
   celestia-server-mocha:
-    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.4.2
+    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.4.3
     container_name: celestia-server
     environment:
       - CELESTIA_AUTH_TOKEN=${CELESTIA_AUTH_TOKEN:-}
-    entrypoint: ["/bin/celestia-server", "--enable-rpc", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", \"$CELESTIA_AUTH_TOKEN\", "--celestia.gas-price", "0.01", "--celestia.gas-multiplier", "1.01", "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://celestia:26658"]
+    entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", \"$CELESTIA_AUTH_TOKEN\",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://celestia:26658"]
     ports:
       - "1317:1317"
       - "9090:9090"
