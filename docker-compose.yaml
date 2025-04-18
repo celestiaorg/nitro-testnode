@@ -46,6 +46,74 @@ services:
     ports:
       - "127.0.0.1:6379:6379"
 
+  localestia:
+    image: ghcr.io/celestiaorg/localestia:v0.1.1
+    container_name: 'local-celestia'
+    environment:
+    - REDIS_URL=redis://redis:6379
+    - LISTEN_ADDR=0.0.0.0:26658
+    - CLEAR_REDIS=true
+    ports:
+    - "127.0.0.1:26658:26658"
+    depends_on:
+    - redis
+
+  celestia:
+    image:  ghcr.io/celestiaorg/celestia-node:v0.21.9
+    container_name: 'celestia'
+    environment:
+      - NODE_TYPE=light
+      - P2P_NETWORK=mocha
+      - RPC_URL=rpc-mocha.pops.one
+      - RPC_PORT=9090
+      - NETWORK=mocha
+    command:
+      - "celestia"
+      - "light"  # node type: light, bridge, or full
+      - "start"
+      - "--core.ip"
+      - "consensus-full-mocha-4.celestia-mocha.com"
+      - "--core.port"
+      - "9090"
+      - "--p2p.network"
+      - "mocha"
+      - "--rpc.skip-auth"
+      - "--rpc.addr"
+      - "0.0.0.0"
+    ports:
+      - "2121:2121"
+      - "26658:26658"
+    volumes:
+      - ${HOME}/.celestia-light-mocha-4:/home/celestia
+
+  celestia-server:
+    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.4.3
+    container_name: celestia-server
+    entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", "",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://localestia:26658"]
+    ports:
+      - "1317:1317"
+      - "9090:9090"
+      - "26657:26657"
+      - "1095:1095"
+      - "8080:8080"
+    depends_on:
+      - localestia
+
+  celestia-server-mocha:
+    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.4.3
+    container_name: celestia-server
+    environment:
+      - CELESTIA_AUTH_TOKEN=${CELESTIA_AUTH_TOKEN:-}
+    entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", \"$CELESTIA_AUTH_TOKEN\",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://celestia:26658"]
+    ports:
+      - "1317:1317"
+      - "9090:9090"
+      - "26657:26657"
+      - "1095:1095"
+      - "8080:8080"
+    depends_on:
+      - celestia
+
   geth:
     image: ethereum/client-go:latest
     ports:
@@ -98,7 +166,6 @@ services:
       - --output-ssz=/consensus/genesis.ssz
       - --chain-config-file=/config/prysm.yaml
       - --geth-genesis-json-in=/config/geth_genesis.json
-      - --geth-genesis-json-out=/config/geth_genesis.json
     volumes:
       - "consensus:/consensus"
       - "config:/config"

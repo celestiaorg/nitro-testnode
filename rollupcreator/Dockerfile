@@ -1,5 +1,5 @@
 FROM node:18-bullseye-slim
-ARG NITRO_CONTRACTS_BRANCH=celestia-v3.1.0-test
+ARG NITRO_CONTRACTS_BRANCH=v2.1.0
 RUN apt-get update && \
     apt-get install -y git docker.io python3 build-essential curl jq
 WORKDIR /workspace
