@@ -1,9 +1,9 @@
-FROM node:18-bullseye-slim
+FROM node:18-bookworm-slim
+ARG NITRO_CONTRACTS_BRANCH=v2.1.0
 RUN apt-get update && \
     apt-get install -y git docker.io python3 make gcc g++ curl jq
-ARG NITRO_CONTRACTS_BRANCH=main
-WORKDIR /workspace  
-RUN git clone --no-checkout https://github.com/OffchainLabs/nitro-contracts.git ./
+WORKDIR /workspace
+RUN git clone --recurse-submodules --no-checkout https://github.com/celestiaorg/nitro-contracts.git ./
 RUN git checkout ${NITRO_CONTRACTS_BRANCH}
 RUN yarn install && yarn cache clean
 RUN curl -L https://foundry.paradigm.xyz | bash

@@ -5,11 +5,13 @@ set -eu
 NITRO_NODE_VERSION=offchainlabs/nitro-node:v3.5.3-rc.3-653b078
 BLOCKSCOUT_VERSION=offchainlabs/blockscout:v1.1.0-0e716c8
 
-DEFAULT_NITRO_CONTRACTS_VERSION="v2.1.1-beta.0"
+# This commit matches the v1.2.1 contracts, with additional support for CacheManger deployment.
+# Once v1.2.2 is released, we can switch to that version.
+DEFAULT_NITRO_CONTRACTS_VERSION="8e5836b8c39657d27a6c7ef69e658720b34b6fb8"
 DEFAULT_TOKEN_BRIDGE_VERSION="v1.2.2"
 
-# The is the latest bold-merge commit in nitro-contracts at the time
 DEFAULT_BOLD_CONTRACTS_VERSION="42d80e40"
+
 
 # Set default versions if not overriden by provided env vars
 : ${NITRO_CONTRACTS_BRANCH:=$DEFAULT_NITRO_CONTRACTS_VERSION}
@@ -60,6 +62,7 @@ l1chainid=1337
 simple=true
 l2anytrust=false
 l2timeboost=false
+local_celestia=true
 
 # Use the dev versions of nitro/blockscout
 dev_nitro=false
@@ -279,6 +282,10 @@ while [[ $# -gt 0 ]]; do
             simple=false
             shift
             ;;
+        --celestia-testnet)
+            local_celestia=false
+            shift
+            ;;
         *)
             echo Usage: $0 \[OPTIONS..]
             echo        $0 script [SCRIPT-ARGS]
@@ -433,6 +440,28 @@ if $force_init; then
     if [ `echo $leftoverVolumes | wc -w` -gt 0 ]; then
         docker volume rm $leftoverVolumes
     fi
+
+    if $local_celestia; then
+        echo == Starting Celestia Client ==
+        docker compose up --wait localestia
+
+        echo == Starting Celestia DA Server ==
+        docker compose up --wait celestia-server
+    else
+        echo == Starting Celestia Client ==
+        docker compose up --wait celestia
+
+        # sleep 10s to allow the node to initialize
+        sleep 10s
+
+        AUTH_TOKEN=$(docker exec celestia celestia light auth admin --p2p.network mocha)
+        echo "Got auth token from celestia node: $AUTH_TOKEN"
+
+        echo == Starting Celestia DA Server ==
+        CELESTIA_AUTH_TOKEN="$AUTH_TOKEN"  docker compose up --wait celestia-server-mocha
+    fi
+
+
 
     echo == Generating l1 keys
     docker compose run scripts write-accounts

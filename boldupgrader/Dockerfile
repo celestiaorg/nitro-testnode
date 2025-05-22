@@ -1,8 +1,8 @@
-FROM node:18-bullseye-slim
+FROM node:18-bookworm-slim
 RUN apt-get update && \
     apt-get install -y git docker.io python3 make gcc g++ curl jq
 ARG BOLD_CONTRACTS_BRANCH=bold-merge-script
-WORKDIR /workspace  
+WORKDIR /workspace
 RUN git clone --no-checkout https://github.com/OffchainLabs/nitro-contracts.git ./
 RUN git checkout ${BOLD_CONTRACTS_BRANCH}
 RUN yarn install && yarn cache clean

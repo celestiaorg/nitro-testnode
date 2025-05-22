@@ -1,8 +1,8 @@
-FROM node:18-bullseye-slim
+FROM node:18-bookworm-slim
 RUN apt-get update && \
     apt-get install -y git docker.io python3 make gcc g++ curl jq
 ARG TOKEN_BRIDGE_BRANCH=main
-WORKDIR /workspace  
+WORKDIR /workspace
 RUN git clone --no-checkout https://github.com/OffchainLabs/token-bridge-contracts.git ./ && \
     git checkout ${TOKEN_BRIDGE_BRANCH} && \
     rm -rf .git && \
