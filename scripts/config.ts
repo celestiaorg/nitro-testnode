@@ -269,6 +269,7 @@ function writeConfigs(argv: any) {
                 "enable": true,
                 "with-writer": true,
                 "rpc": {
+                    "url": "http://celestia-server:26657",
                     "retries": 3,
                     "retry-errors": "websocket: close.*|dial tcp .*|.*i/o timeout|.*connection reset by peer|.*connection refused",
                     "arg-log-limit": 2048,
