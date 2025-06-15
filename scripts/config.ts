@@ -255,7 +255,7 @@ function writeConfigs(argv: any) {
                 }
             },
             "data-availability": {
-                "enable": argv.anytrust,
+                "enable": false,
                 "rpc-aggregator": dasBackendsJsonConfig(argv),
                 "rest-aggregator": {
                     "enable": true,
@@ -455,6 +455,62 @@ function writeL3ChainConfig(argv: any) {
     const l3ChainConfigJSON = JSON.stringify(l3ChainConfig)
     fs.writeFileSync(path.join(consts.configpath, "l3_chain_config.json"), l3ChainConfigJSON)
 }
+
+function writeDAProviderConfig(argv: any) {
+    const sequencerInboxAddr = ethers.utils.hexlify(getChainInfo()[0]["rollup"]["sequencer-inbox"]);
+    const daProviderConfig = {
+        "das-server": {
+            "addr": "0.0.0.0",
+            "port": "9880",
+            "jwtsecret": "",
+            "enable-da-writer": true,
+            "data-availability": {
+                "enable": true,
+                "rpc-aggregator": {
+                    "enable": true,
+                    "assumed-honest": 1,
+                    "backends": [
+                        {
+                            "url": "http://das-committee-a:9876",
+                            "pubkey": argv.dasBlsA
+                        },
+                        {
+                            "url": "http://das-committee-b:9876",
+                            "pubkey": argv.dasBlsB
+                        }
+                    ]
+                },
+                "rest-aggregator": {
+                    "enable": true,
+                    "urls": ["http://das-mirror:9877"],
+                },
+                "key": {
+                    "key-dir": "/das/keys"
+                },
+                "local-file-storage": {
+                    "data-dir": "/das/data",
+                    "enable": true,
+                    "enable-expiry": true
+                },
+                "sequencer-inbox-address": sequencerInboxAddr,
+                "parent-chain-node-url": argv.l1url
+            }
+        }, // <- Removed trailing comma here
+        "with-data-signer": true,
+        "data-signer-wallet": {
+            "account": namedAddress("sequencer"),
+            "password": consts.l1passphrase,
+            "pathname": consts.l1keystore
+        }
+    }
+
+    const daProviderConfigJSON = JSON.stringify(daProviderConfig, null, 2); // Added formatting for readability
+
+    console.log("DA Provider Config: ", daProviderConfigJSON);
+
+    fs.writeFileSync(path.join(consts.configpath, "daprovider.json"), daProviderConfigJSON);
+}
+
 
 function writeL2DASCommitteeConfig(argv: any) {
     const sequencerInboxAddr = ethers.utils.hexlify(getChainInfo()[0]["rollup"]["sequencer-inbox"]);
@@ -675,6 +731,31 @@ export const writeL2DASCommitteeConfigCommand = {
     describe: "writes daserver committee member config file",
     handler: (argv: any) => {
         writeL2DASCommitteeConfig(argv)
+    }
+}
+
+export const writeDAProviderConfigCommand = {
+    command: "write-daprovider-config",
+    describe: "writes daprovider server config file",
+    builder: {
+        dasPrivKey: {
+            string: true,
+            describe: "DAS committee member A BLS ptiv key",
+            default: ""
+        },
+        dasBlsA: {
+            string: true,
+            describe: "DAS committee member A BLS pub key",
+            default: ""
+        },
+        dasBlsB: {
+            string: true,
+            describe: "DAS committee member B BLS pub key",
+            default: ""
+        },
+    },
+    handler: (argv: any) => {
+        writeDAProviderConfig(argv)
     }
 }
 

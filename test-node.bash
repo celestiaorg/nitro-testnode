@@ -554,6 +554,9 @@ if $l2anytrust; then
         das_bls_a=`docker compose run --entrypoint sh datool -c "cat /das-committee-a/keys/das_bls.pub"`
         das_bls_b=`docker compose run --entrypoint sh datool -c "cat /das-committee-b/keys/das_bls.pub"`
 
+        das_bls_a_priv=`docker compose run --entrypoint sh datool -c "cat /das-committee-a/keys/das_bls"`
+        docker compose run scripts write-daprovider-config --dasPrivKey $das_bls_a_priv --dasBlsA $das_bls_a --dasBlsB $das_bls_b
+
         docker compose run scripts write-l2-das-keyset-config --dasBlsA $das_bls_a --dasBlsB $das_bls_b
         docker compose run --entrypoint sh datool -c "/usr/local/bin/datool dumpkeyset --conf.file /config/l2_das_keyset.json | grep 'Keyset: ' | awk '{ printf \"%s\", \$2 }' > /config/l2_das_keyset.hex"
         docker compose run scripts set-valid-keyset
@@ -563,7 +566,7 @@ if $l2anytrust; then
 
     if $run; then
         echo == Starting AnyTrust committee and mirror
-        docker compose up --wait das-committee-a das-committee-b das-mirror
+        docker compose up --wait das-committee-a das-committee-b das-mirror daprovider
     fi
 fi
 

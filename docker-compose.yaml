@@ -87,9 +87,9 @@ services:
       - ${HOME}/.celestia-light-mocha-4:/home/celestia
 
   celestia-server:
-    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.5.0
+    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.5.1
     container_name: celestia-server
-    entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", "",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://localestia:26658"]
+    entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", "",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://localestia:26658", "--das.rpc-url", "http://daprovider:9880", "--das.enable-fallback"]
     ports:
       - "1317:1317"
       - "9090:9090"
@@ -477,6 +477,20 @@ services:
       - "config:/config"
       - /var/run/docker.sock:/var/run/docker.sock
 
+  daprovider:
+    image: nitro-node-dev-testnode
+    entrypoint: /usr/local/bin/daprovider
+    ports:
+      - "127.0.0.1:9880:9880"
+      - "127.0.0.1:6070:6070"
+    volumes:
+      - "config:/config"
+      - "da-provider-data:/daprovider"
+      - "das-committee-a-data:/das"
+      - "l1keystore:/home/user/l1keystore"
+    command:
+      - --conf.file=/config/daprovider.json
+
   datool:
     image: nitro-node-dev-testnode
     entrypoint: /usr/local/bin/datool
@@ -485,6 +499,7 @@ services:
       - "das-committee-a-data:/das-committee-a"
       - "das-committee-b-data:/das-committee-b"
       - "das-mirror-data:/das-mirror"
+      - "da-provider-data:/daprovider"
     command:
 
   das-committee-a:
@@ -577,3 +592,4 @@ volumes:
   das-mirror-data:
   timeboost-auctioneer-data:
   boldupgrader-data:
+  da-provider-data:
