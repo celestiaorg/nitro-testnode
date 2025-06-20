@@ -7,7 +7,7 @@ BLOCKSCOUT_VERSION=offchainlabs/blockscout:v1.1.0-0e716c8
 
 # This commit matches the v1.2.1 contracts, with additional support for CacheManger deployment.
 # Once v1.2.2 is released, we can switch to that version.
-DEFAULT_NITRO_CONTRACTS_VERSION="8e5836b8c39657d27a6c7ef69e658720b34b6fb8"
+DEFAULT_NITRO_CONTRACTS_VERSION="8b17454ca87e4aa0c66d70844e6fbdcf57f7c43c"
 DEFAULT_TOKEN_BRIDGE_VERSION="v1.2.2"
 
 DEFAULT_BOLD_CONTRACTS_VERSION="42d80e40"

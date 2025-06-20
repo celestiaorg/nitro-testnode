@@ -87,9 +87,9 @@ services:
       - ${HOME}/.celestia-light-mocha-4:/home/celestia
 
   celestia-server:
-    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.5.1
+    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.5.2
     container_name: celestia-server
-    entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", "",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://localestia:26658", "--das.rpc-url", "http://daprovider:9880", "--das.enable-fallback"]
+    entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", "",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://localestia:26658", "--das.enable", "--das.with-writer", "--das.rpc.url", "http://daprovider:9880"]
     ports:
       - "1317:1317"
       - "9090:9090"
