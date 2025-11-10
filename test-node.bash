@@ -5,11 +5,12 @@ set -eu
 NITRO_NODE_VERSION=offchainlabs/nitro-node:v3.6.7-a7c9f1e
 BLOCKSCOUT_VERSION=offchainlabs/blockscout:v1.1.0-0e716c8
 
-# nitro-contract workaround for testnode
-# 1. authorizing validator signer key since validator wallet is buggy
-#    - gas estimation sent from 0x0000 lead to balance and permission error
-DEFAULT_NITRO_CONTRACTS_VERSION="v3.1.0"
+# This commit matches the v1.2.1 contracts, with additional support for CacheManger deployment.
+# Once v1.2.2 is released, we can switch to that version.
+DEFAULT_NITRO_CONTRACTS_VERSION="caefcf56014d1ee740e24ca3c5b17ba3fce11743"
 DEFAULT_TOKEN_BRIDGE_VERSION="v1.2.2"
+
+
 
 # Set default versions if not overriden by provided env vars
 : ${NITRO_CONTRACTS_BRANCH:=$DEFAULT_NITRO_CONTRACTS_VERSION}
@@ -57,6 +58,7 @@ l1chainid=1337
 simple=true
 l2anytrust=false
 l2timeboost=false
+local_celestia=true
 
 # Use the dev versions of nitro/blockscout
 dev_nitro=false
@@ -280,6 +282,10 @@ while [[ $# -gt 0 ]]; do
             simple=false
             shift
             ;;
+        --celestia-testnet)
+            local_celestia=false
+            shift
+            ;;
         *)
             echo Usage: $0 \[OPTIONS..]
             echo        $0 script [SCRIPT-ARGS]
@@ -434,6 +440,28 @@ if $force_init; then
         docker volume rm $leftoverVolumes
     fi
 
+    if $local_celestia; then
+        echo == Starting Celestia Client ==
+        docker compose up --wait localestia
+
+        echo == Starting Celestia DA Server ==
+        docker compose up --wait celestia-server
+    else
+        echo == Starting Celestia Client ==
+        docker compose up --wait celestia
+
+        # sleep 10s to allow the node to initialize
+        sleep 10s
+
+        AUTH_TOKEN=$(docker exec celestia celestia light auth admin --p2p.network mocha)
+        echo "Got auth token from celestia node: $AUTH_TOKEN"
+
+        echo == Starting Celestia DA Server ==
+        CELESTIA_AUTH_TOKEN="$AUTH_TOKEN"  docker compose up --wait celestia-server-mocha
+    fi
+
+
+
     echo == Generating l1 keys
     docker compose run scripts write-accounts
     docker compose run --entrypoint sh geth -c "echo passphrase > /datadir/passphrase"
@@ -516,6 +544,9 @@ if $l2anytrust; then
         das_bls_a=`docker compose run --entrypoint sh datool -c "cat /das-committee-a/keys/das_bls.pub"`
         das_bls_b=`docker compose run --entrypoint sh datool -c "cat /das-committee-b/keys/das_bls.pub"`
 
+        das_bls_a_priv=`docker compose run --entrypoint sh datool -c "cat /das-committee-a/keys/das_bls"`
+        docker compose run scripts write-daprovider-config --dasPrivKey $das_bls_a_priv --dasBlsA $das_bls_a --dasBlsB $das_bls_b
+
         docker compose run scripts write-l2-das-keyset-config --dasBlsA $das_bls_a --dasBlsB $das_bls_b
         docker compose run --entrypoint sh datool -c "/usr/local/bin/datool dumpkeyset --conf.file /config/l2_das_keyset.json | grep 'Keyset: ' | awk '{ printf \"%s\", \$2 }' > /config/l2_das_keyset.hex"
         docker compose run scripts set-valid-keyset
@@ -525,7 +556,7 @@ if $l2anytrust; then
 
     if $run; then
         echo == Starting AnyTrust committee and mirror
-        docker compose up --wait das-committee-a das-committee-b das-mirror
+        docker compose up --wait das-committee-a das-committee-b das-mirror daprovider
     fi
 fi
 
