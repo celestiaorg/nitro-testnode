@@ -58,34 +58,6 @@ services:
     depends_on:
     - redis
 
-  celestia:
-    image:  ghcr.io/celestiaorg/celestia-node:v0.21.9
-    container_name: 'celestia'
-    environment:
-      - NODE_TYPE=light
-      - P2P_NETWORK=mocha
-      - RPC_URL=${CELESTIA_BRIDGE:-}
-      - RPC_PORT=26658
-      - NETWORK=mocha
-    command:
-      - "celestia"
-      - "light"  # node type: light, bridge, or full
-      - "start"
-      - "--core.ip"
-      - "consensus-full-mocha-4.celestia-mocha.com"
-      - "--core.port"
-      - "9090"
-      - "--p2p.network"
-      - "mocha"
-      - "--rpc.skip-auth"
-      - "--rpc.addr"
-      - "0.0.0.0"
-    ports:
-      - "2121:2121"
-      - "26658:26658"
-    volumes:
-      - ${HOME}/.celestia-light-mocha-4:/home/celestia
-
   celestia-server:
     image: ghcr.io/celestiaorg/nitro-das-celestia:v0.4.3
     container_name: celestia-server
@@ -103,16 +75,15 @@ services:
     image: ghcr.io/celestiaorg/nitro-das-celestia:v0.4.3
     container_name: celestia-server
     environment:
-      - CELESTIA_AUTH_TOKEN=${CELESTIA_AUTH_TOKEN:-}
-    entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", \"$CELESTIA_AUTH_TOKEN\",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://celestia:26658"]
+      - CELESTIA_AUTH_TOKEN=${CELESTIA_AUTH_TOKEN}
+      - CELESTIA_BRIDG${CELESTIA_BRDIGE}
+    entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", \"$CELESTIA_AUTH_TOKEN\",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", \"$CELESTIA_BRIDGE\"]
     ports:
       - "1317:1317"
       - "9090:9090"
       - "26657:26657"
       - "1095:1095"
       - "8080:8080"
-    depends_on:
-      - celestia
 
   geth:
     image: ethereum/client-go:stable
