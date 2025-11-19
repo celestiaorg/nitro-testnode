@@ -76,7 +76,7 @@ services:
     container_name: celestia-server
     environment:
       - CELESTIA_AUTH_TOKEN=${CELESTIA_AUTH_TOKEN}
-      - CELESTIA_BRIDG${CELESTIA_BRDIGE}
+      - CELESTIA_BRIDGE=${CELESTIA_BRIDGE}
     entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", \"$CELESTIA_AUTH_TOKEN\",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", \"$CELESTIA_BRIDGE\"]
     ports:
       - "1317:1317"
