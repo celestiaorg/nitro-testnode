@@ -1,9 +1,8 @@
 FROM node:20-bookworm-slim
 RUN apt-get update && \
     apt-get install -y git docker.io python3 make gcc g++ curl jq
-ARG NITRO_CONTRACTS_BRANCH=main
-WORKDIR /workspace  
-RUN git clone --no-checkout https://github.com/OffchainLabs/nitro-contracts.git ./
+WORKDIR /workspace
+RUN git clone --recurse-submodules --no-checkout https://github.com/celestiaorg/nitro-contracts.git ./
 RUN git checkout ${NITRO_CONTRACTS_BRANCH}
 RUN git submodule update --init --recursive
 RUN yarn install && yarn cache clean
