@@ -15,7 +15,8 @@ jobs:
   build_and_run:
     runs-on: ubuntu-8
     env:
-      CELESTIA_BRIDGE_TOKEN: ${{ secrets.CELESTIA_BRIDGE_TOKEN }}
+      CELESTIA_AUTH_TOKEN: ${{ secrets.CELESTIA_BRIDGE_TOKEN }}
+      CELESTIA_BRIDGE: ${{ secrets.CELESTIA_BRIDGE }}
     strategy:
       matrix:
         pos: [pos, no-pos]
@@ -46,6 +47,9 @@ jobs:
 
   bold_upgrade:
     runs-on: ubuntu-8
+    env:
+      CELESTIA_AUTH_TOKEN: ${{ secrets.CELESTIA_BRIDGE_TOKEN }}
+      CELESTIA_BRIDGE: ${{ secrets.CELESTIA_BRIDGE }}
 
     steps:
       - name: Checkout
