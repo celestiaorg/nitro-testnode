@@ -47,7 +47,7 @@ services:
       - "127.0.0.1:6379:6379"
 
   localestia:
-    image: ghcr.io/celestiaorg/localestia:v0.1.2
+    image: ghcr.io/celestiaorg/localestia:v0.1.3
     container_name: 'local-celestia'
     environment:
     - REDIS_URL=redis://redis:6379
@@ -87,17 +87,15 @@ services:
       - ${HOME}/.celestia-light-mocha-4:/home/celestia
 
   celestia-server:
-    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.5.6
+    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.7.0-mocha
     container_name: celestia-server
-    entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", "",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://localestia:26658", "--das.enable", "--das.with-writer", "--das.rpc.url", "http://daprovider:9880"]
+    entrypoint: ["/bin/celestia-server", "--log-level", "TRACE", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.with-writer", "--celestia.auth-token", "",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://localestia:26658"]
     ports:
       - "1317:1317"
       - "9090:9090"
       - "26657:26657"
       - "1095:1095"
       - "8080:8080"
-    depends_on:
-      - localestia
 
   celestia-server-mocha:
     image: ghcr.io/celestiaorg/nitro-das-celestia:v0.4.3
@@ -461,20 +459,6 @@ services:
       - "contracts-local:/contracts-local"
       - "referenceda-provider-data:/referenceda-provider"
 
-  daprovider:
-    image: nitro-node-dev-testnode
-    entrypoint: /usr/local/bin/daprovider
-    ports:
-      - "127.0.0.1:9880:9880"
-      - "127.0.0.1:6070:6070"
-    volumes:
-      - "config:/config"
-      - "da-provider-data:/daprovider"
-      - "das-committee-a-data:/das"
-      - "l1keystore:/home/user/l1keystore"
-    command:
-      - --conf.file=/config/daprovider.json
-
   datool:
     image: nitro-node-dev-testnode
     entrypoint: /usr/local/bin/datool
@@ -484,7 +468,6 @@ services:
       - "das-committee-b-data:/das-committee-b"
       - "das-mirror-data:/das-mirror"
       - "referenceda-provider-data:/referenceda-provider"
-      - "da-provider-data:/daprovider"
     command:
 
   das-committee-a:

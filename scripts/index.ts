@@ -9,7 +9,6 @@ import {
   writeL2ChainConfigCommand,
   writeL3ChainConfigCommand,
   writeL2DASCommitteeConfigCommand,
-  writeDAProviderConfigCommand,
   writeL2DASMirrorConfigCommand,
   writeL2DASKeysetConfigCommand,
   writeL2ReferenceDAConfigCommand,
@@ -72,7 +71,6 @@ async function main() {
     .command(writeL2ChainConfigCommand)
     .command(writeL3ChainConfigCommand)
     .command(writeL2DASCommitteeConfigCommand)
-    .command(writeDAProviderConfigCommand)
     .command(writeL2DASMirrorConfigCommand)
     .command(writeL2DASKeysetConfigCommand)
     .command(writeL2ReferenceDAConfigCommand)
