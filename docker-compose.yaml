@@ -46,8 +46,76 @@ services:
     ports:
       - "127.0.0.1:6379:6379"
 
+  localestia:
+    image: ghcr.io/celestiaorg/localestia:v0.1.2
+    container_name: 'local-celestia'
+    environment:
+    - REDIS_URL=redis://redis:6379
+    - LISTEN_ADDR=0.0.0.0:26658
+    - CLEAR_REDIS=true
+    ports:
+    - "127.0.0.1:26658:26658"
+    depends_on:
+    - redis
+
+  celestia:
+    image:  ghcr.io/celestiaorg/celestia-node:v0.21.9
+    container_name: 'celestia'
+    environment:
+      - NODE_TYPE=light
+      - P2P_NETWORK=mocha
+      - RPC_URL=rpc-mocha.pops.one
+      - RPC_PORT=9090
+      - NETWORK=mocha
+    command:
+      - "celestia"
+      - "light"  # node type: light, bridge, or full
+      - "start"
+      - "--core.ip"
+      - "consensus-full-mocha-4.celestia-mocha.com"
+      - "--core.port"
+      - "9090"
+      - "--p2p.network"
+      - "mocha"
+      - "--rpc.skip-auth"
+      - "--rpc.addr"
+      - "0.0.0.0"
+    ports:
+      - "2121:2121"
+      - "26658:26658"
+    volumes:
+      - ${HOME}/.celestia-light-mocha-4:/home/celestia
+
+  celestia-server:
+    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.4.3
+    container_name: celestia-server
+    entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", "",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://localestia:26658"]
+    ports:
+      - "1317:1317"
+      - "9090:9090"
+      - "26657:26657"
+      - "1095:1095"
+      - "8080:8080"
+    depends_on:
+      - localestia
+
+  celestia-server-mocha:
+    image: ghcr.io/celestiaorg/nitro-das-celestia:v0.4.3
+    container_name: celestia-server
+    environment:
+      - CELESTIA_AUTH_TOKEN=${CELESTIA_AUTH_TOKEN:-}
+    entrypoint: ["/bin/celestia-server", "--rpc-addr", "0.0.0.0", "--rpc-port", "26657", "--celestia.auth-token", \"$CELESTIA_AUTH_TOKEN\",  "--celestia.namespace-id", "000008e5f679bf7116cb", "--celestia.rpc", "http://celestia:26658"]
+    ports:
+      - "1317:1317"
+      - "9090:9090"
+      - "26657:26657"
+      - "1095:1095"
+      - "8080:8080"
+    depends_on:
+      - celestia
+
   geth:
-    image: ethereum/client-go:latest
+    image: ethereum/client-go:stable
     ports:
       - "127.0.0.1:8545:8545"
       - "127.0.0.1:8551:8551"
@@ -98,7 +166,6 @@ services:
       - --output-ssz=/consensus/genesis.ssz
       - --chain-config-file=/config/prysm.yaml
       - --geth-genesis-json-in=/config/geth_genesis.json
-      - --geth-genesis-json-out=/config/geth_genesis.json
     volumes:
       - "consensus:/consensus"
       - "config:/config"
@@ -167,9 +234,15 @@ services:
       - "l1keystore:/home/user/l1keystore"
       - "config:/config"
       - "tokenbridge-data:/tokenbridge-data"
-    command: --conf.file /config/sequencer_config.json --node.feed.output.enable --node.feed.output.port 9642  --http.api net,web3,eth,txpool,debug --node.seq-coordinator.my-url  ws://sequencer:8548 --graphql.enable --graphql.vhosts * --graphql.corsdomain *
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    command:
+      - --conf.file=/config/sequencer_config.json
+      - --node.feed.output.enable
+      - --node.feed.output.port=9642
+      - --http.api=net,web3,eth,txpool,debug,timeboost,auctioneer
+      - --node.seq-coordinator.my-url=http://sequencer:8547
+      - --graphql.enable
+      - --graphql.vhosts=*
+      - --graphql.corsdomain=*
     depends_on:
       - geth
 
@@ -183,7 +256,10 @@ services:
     volumes:
       - "seqdata_b:/home/user/.arbitrum/local/nitro"
       - "config:/config"
-    command: --conf.file /config/sequencer_config.json --node.seq-coordinator.my-url ws://sequencer_b:8548
+    command:
+      - --conf.file=/config/sequencer_config.json
+      - --node.seq-coordinator.my-url=http://sequencer_b:8547
+      - --http.api=net,web3,eth,txpool,debug,timeboost,auctioneer
     depends_on:
       - geth
       - redis
@@ -198,7 +274,10 @@ services:
     volumes:
       - "seqdata_c:/home/user/.arbitrum/local/nitro"
       - "config:/config"
-    command: --conf.file /config/sequencer_config.json --node.seq-coordinator.my-url ws://sequencer_c:8548
+    command:
+      - --conf.file=/config/sequencer_config.json
+      - --node.seq-coordinator.my-url=http://sequencer_c:8547
+      - --http.api=net,web3,eth,txpool,debug,timeboost,auctioneer
     depends_on:
       - geth
       - redis
@@ -213,7 +292,10 @@ services:
     volumes:
       - "seqdata_d:/home/user/.arbitrum/local/nitro"
       - "config:/config"
-    command: --conf.file /config/sequencer_config.json --node.seq-coordinator.my-url ws://sequencer_d:8548
+    command:
+      - --conf.file=/config/sequencer_config.json
+      - --node.seq-coordinator.my-url=http://sequencer_d:8547
+      - --http.api=net,web3,eth,txpool,debug,timeboost,auctioneer
     depends_on:
       - geth
       - redis
@@ -362,6 +444,26 @@ services:
       - "tokenbridge-data:/workspace"
       - /var/run/docker.sock:/var/run/docker.sock
 
+  boldupgrader:
+    depends_on:
+      - geth
+      - sequencer
+    pid: host
+    build:
+      context: boldupgrader/
+      args:
+        BOLD_CONTRACTS_BRANCH: ${BOLD_CONTRACTS_BRANCH:-}
+    environment:
+      - L1_RPC_URL=http://geth:8545
+      - L1_PRIV_KEY=0xdc04c5399f82306ec4b4d654a342f40e2e0620fe39950d967e1e574b32d4dd36
+      - CONFIG_NETWORK_NAME=local
+      - DEPLOYED_CONTRACTS_DIR=./scripts/files/
+      - DISABLE_VERIFICATION=true
+    volumes:
+      - "config:/config"
+      - "boldupgrader-data:/workspace"
+      - /var/run/docker.sock:/var/run/docker.sock
+
   rollupcreator:
     depends_on:
       - geth
@@ -423,6 +525,37 @@ services:
     command:
       - --conf.file=/config/l2_das_mirror.json
 
+  timeboost-auctioneer:
+    pid: host # allow debugging
+    image: nitro-node-dev-testnode
+    entrypoint: /usr/local/bin/autonomous-auctioneer
+    volumes:
+      - "config:/config"
+      - "timeboost-auctioneer-data:/data"
+      - "l1keystore:/home/user/l1keystore"
+    command:
+      - --conf.file=/config/autonomous_auctioneer_config.json
+    depends_on:
+      - redis
+
+  timeboost-bid-validator:
+    pid: host # allow debugging
+    image: nitro-node-dev-testnode
+    entrypoint: /usr/local/bin/autonomous-auctioneer
+    ports:
+      - "127.0.0.1:9372:8547"
+    volumes:
+      - "config:/config"
+    command:
+      - --conf.file=/config/bid_validator_config.json
+      - --http.addr=0.0.0.0
+      - --http.vhosts=*
+      - --http.corsdomain=*
+      - --http.api=auctioneer
+      - --log-level=INFO
+    depends_on:
+      - redis
+
 volumes:
   l1data:
   consensus:
@@ -442,3 +575,5 @@ volumes:
   das-committee-a-data:
   das-committee-b-data:
   das-mirror-data:
+  timeboost-auctioneer-data:
+  boldupgrader-data:

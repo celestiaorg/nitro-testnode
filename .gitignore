@@ -1,3 +1,4 @@
 logs/*
 celestia-node
 nitro-das-celestia
+/node_modules
